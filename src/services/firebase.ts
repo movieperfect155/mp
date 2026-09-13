@@ -23,9 +23,12 @@ import { Poster } from '../types';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
 
-// Test Firestore connection on boot (Critical Constraint)
+// Initialize Firestore with explicit database ID from config
+const dbId = (firebaseConfig as any).firestoreDatabaseId || 'ai-studio-mp-44c6c9c3-dc3b-4b39-918d-9cc8608e9243';
+export const db = getFirestore(app, dbId);
+
+// Test Firestore connection on boot
 export async function testFirestoreConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
@@ -103,16 +106,23 @@ export const savePosterToFirestore = async (poster: Poster): Promise<void> => {
 // Batch save multiple posters to Firestore
 export const batchSavePostersToFirestore = async (posters: Poster[]): Promise<void> => {
   if (!posters || posters.length === 0) return;
-  const CHUNK_SIZE = 400;
+  // Smaller chunk size (80) avoids payload limits and network congestion
+  const CHUNK_SIZE = 80;
   for (let i = 0; i < posters.length; i += CHUNK_SIZE) {
     const chunk = posters.slice(i, i + CHUNK_SIZE);
     const batch = writeBatch(db);
     for (const poster of chunk) {
+      if (!poster.id) continue;
       const posterRef = doc(db, 'posters', poster.id);
       const clean = sanitizeForFirestore(poster);
       batch.set(posterRef, clean, { merge: true });
     }
-    await batch.commit();
+    // Set 15-second timeout per batch to prevent hanging forever
+    const commitPromise = batch.commit();
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Firestore commit timed out')), 15000)
+    );
+    await Promise.race([commitPromise, timeoutPromise]);
   }
 };
 

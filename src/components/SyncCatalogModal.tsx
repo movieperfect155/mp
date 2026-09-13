@@ -239,8 +239,11 @@ export const SyncCatalogModal: React.FC<SyncCatalogModalProps> = ({
                     type="button"
                     onClick={async () => {
                       setIsCloudSyncing(true);
-                      await onForceCloudSync();
-                      setIsCloudSyncing(false);
+                      try {
+                        await onForceCloudSync();
+                      } finally {
+                        setIsCloudSyncing(false);
+                      }
                     }}
                     disabled={isCloudSyncing}
                     className="mt-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
