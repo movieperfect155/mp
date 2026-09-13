@@ -500,14 +500,18 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4 text-zinc-400">
-            <button
-              onClick={() => setIsApkGuideOpen(true)}
-              className="flex items-center gap-1 hover:text-emerald-400 transition-colors"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Web to APK Guide (Beginner)</span>
-            </button>
-            <span>•</span>
+            {showAdminControls && (
+              <>
+                <button
+                  onClick={() => setIsApkGuideOpen(true)}
+                  className="flex items-center gap-1 hover:text-emerald-400 transition-colors"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Web to APK Guide (Beginner)</span>
+                </button>
+                <span>•</span>
+              </>
+            )}
             <span>Google Drive API v3 Integrated</span>
           </div>
         </div>
