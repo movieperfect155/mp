@@ -1,64 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
   <defs>
-    <linearGradient id="fullGradBar1" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0f4ec7" />
-      <stop offset="100%" stop-color="#185ee0" />
+    <linearGradient id="sqBlueFront" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0055b8" />
+      <stop offset="100%" stop-color="#004ca8" />
     </linearGradient>
-    <linearGradient id="fullGradShadow1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b2469" />
-      <stop offset="100%" stop-color="#061642" />
-    </linearGradient>
-    <linearGradient id="fullGradPeak" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#165edf" />
-      <stop offset="100%" stop-color="#2475f5" />
-    </linearGradient>
-    <linearGradient id="fullGradShadow2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0c256a" />
-      <stop offset="100%" stop-color="#061745" />
-    </linearGradient>
-    <linearGradient id="fullGradPStem" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0a6be8" />
-      <stop offset="100%" stop-color="#1b8bf5" />
-    </linearGradient>
-    <linearGradient id="fullGradPLoop" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1b90f8" />
-      <stop offset="100%" stop-color="#0080ff" />
+    <linearGradient id="sqBlueShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002b70" />
+      <stop offset="100%" stop-color="#002058" />
     </linearGradient>
   </defs>
 
-  <!-- Solid White Canvas matching photo_2026-09-13_18-52-28.jpg -->
+  <!-- Pure White Background matching photo_2026-09-13_19-10-17.jpg -->
   <rect width="600" height="600" fill="#ffffff" />
 
-  <!-- Centered MP 3D Ribbon Emblem -->
-  <g transform="translate(105, 175) scale(0.85)">
-    <!-- 1. M Left-most slanted bar -->
-    <polygon points="50,110 106,110 56,215 0,215" fill="url(#fullGradBar1)" />
+  <!-- Prominently Centered MP Emblem -->
+  <g transform="translate(85, 185) scale(0.95)">
+    <!-- 1. Leftmost upward bar (Step 1) -->
+    <polygon points="0,250 76,250 152,130 76,130" fill="url(#sqBlueFront)" />
 
-    <!-- 2. Left internal shadow facet -->
-    <polygon points="106,110 144,110 94,215 56,215" fill="url(#fullGradShadow1)" />
+    <!-- 2. Left shadow valley fold (Fold 1) -->
+    <polygon points="76,130 152,130 196,250 120,250" fill="url(#sqBlueShadow)" />
 
-    <!-- 3. M Middle upward stroke to peak -->
-    <polygon points="144,110 200,10 156,10 94,215" fill="url(#fullGradPeak)" />
+    <!-- 3. Middle upward stroke to peak (Step 2) -->
+    <polygon points="120,250 196,250 238,65 162,65" fill="url(#sqBlueFront)" />
 
-    <!-- 4. M to P downward shadow fold -->
-    <polygon points="200,10 236,10 176,215 142,215" fill="url(#fullGradShadow2)" />
+    <!-- 4. Middle-to-P shadow fold (Fold 2) -->
+    <polygon points="162,65 238,65 282,250 206,250" fill="url(#sqBlueShadow)" />
 
-    <!-- 5. P Main upright ribbon stem -->
-    <polygon points="236,10 292,10 196,215 176,215" fill="url(#fullGradPStem)" />
+    <!-- 5. P Main upright stem (Step 3) -->
+    <polygon points="206,250 282,250 324,0 248,0" fill="url(#sqBlueFront)" />
 
     <!-- 6. P Head loop -->
-    <path d="M 276,10 L 440,10 L 388,124 L 272,124 L 298,70 L 356,70 L 370,38 L 290,38 Z" fill="url(#fullGradPLoop)" />
+    <path d="M 248,0 L 440,0 L 344,148 L 260,148 L 292,98 L 328,98 L 360,48 L 272,48 Z" fill="url(#sqBlueFront)" />
   </g>
-
-  <!-- Mobile Perfect Typography: bold, clean modern sans-serif in solid black -->
-  <text 
-    x="300" 
-    y="435" 
-    text-anchor="middle" 
-    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" 
-    font-size="52" 
-    font-weight="700" 
-    letter-spacing="-0.5px"
-    fill="#000000"
-  >Mobile Perfect</text>
 </svg>

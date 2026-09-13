@@ -1,59 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 250" width="500" height="250">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 250" width="450" height="250">
+  <!-- Solid Brand Colors -->
   <defs>
-    <!-- Facet 1: M Left Bar (Rich Royal Blue) -->
-    <linearGradient id="mpGradBar1" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0f4ec7" />
-      <stop offset="100%" stop-color="#185ee0" />
+    <linearGradient id="mpBlueFront" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0055b8" />
+      <stop offset="100%" stop-color="#004ca8" />
     </linearGradient>
-
-    <!-- Facet 2: Left Shadow Valley (Deep Navy) -->
-    <linearGradient id="mpGradShadow1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b2469" />
-      <stop offset="100%" stop-color="#061642" />
-    </linearGradient>
-
-    <!-- Facet 3: M Center Peak (Vibrant Blue) -->
-    <linearGradient id="mpGradPeak" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#165edf" />
-      <stop offset="100%" stop-color="#2475f5" />
-    </linearGradient>
-
-    <!-- Facet 4: Center-to-Right Shadow Fold (Deep Navy) -->
-    <linearGradient id="mpGradShadow2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0c256a" />
-      <stop offset="100%" stop-color="#061745" />
-    </linearGradient>
-
-    <!-- Facet 5: P Upright Stem (Bright Vivid Blue) -->
-    <linearGradient id="mpGradPStem" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0a6be8" />
-      <stop offset="100%" stop-color="#1b8bf5" />
-    </linearGradient>
-
-    <!-- Facet 6: P Head & Loop (Electric Sky/Cyan Blue) -->
-    <linearGradient id="mpGradPLoop" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1b90f8" />
-      <stop offset="100%" stop-color="#0080ff" />
+    <linearGradient id="mpBlueShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002b70" />
+      <stop offset="100%" stop-color="#002058" />
     </linearGradient>
   </defs>
 
-  <g transform="translate(10, 15)">
-    <!-- 1. M Left-most slanted bar -->
-    <polygon points="50,110 106,110 56,215 0,215" fill="url(#mpGradBar1)" />
+  <g id="mp-logo-mark">
+    <!-- 1. Leftmost upward bar (Step 1) -->
+    <polygon points="0,250 76,250 152,130 76,130" fill="url(#mpBlueFront)" />
 
-    <!-- 2. Left internal shadow facet -->
-    <polygon points="106,110 144,110 94,215 56,215" fill="url(#mpGradShadow1)" />
+    <!-- 2. Left shadow valley fold (Fold 1) -->
+    <polygon points="76,130 152,130 196,250 120,250" fill="url(#mpBlueShadow)" />
 
-    <!-- 3. M Middle upward stroke to peak -->
-    <polygon points="144,110 200,10 156,10 94,215" fill="url(#mpGradPeak)" />
+    <!-- 3. Middle upward stroke to peak (Step 2) -->
+    <polygon points="120,250 196,250 238,65 162,65" fill="url(#mpBlueFront)" />
 
-    <!-- 4. M to P downward shadow fold -->
-    <polygon points="200,10 236,10 176,215 142,215" fill="url(#mpGradShadow2)" />
+    <!-- 4. Middle-to-P shadow fold (Fold 2) -->
+    <polygon points="162,65 238,65 282,250 206,250" fill="url(#mpBlueShadow)" />
 
-    <!-- 5. P Main upright ribbon stem -->
-    <polygon points="236,10 292,10 196,215 176,215" fill="url(#mpGradPStem)" />
+    <!-- 5. P Main upright stem (Step 3) -->
+    <polygon points="206,250 282,250 324,0 248,0" fill="url(#mpBlueFront)" />
 
-    <!-- 6. P Head loop (Combined solid polygon with counter hole) -->
-    <path d="M 276,10 L 440,10 L 388,124 L 272,124 L 298,70 L 356,70 L 370,38 L 290,38 Z" fill="url(#mpGradPLoop)" />
+    <!-- 6. P Head loop (Solid outer shape with counter cutout) -->
+    <!-- Outer boundary: Top (248,0) -> (440,0) -> Slant down to (344,148) -> Return (260,148) -->
+    <!-- Inner cutout: (272,48) -> (360,48) -> (328,98) -> (240,98) -->
+    <path d="M 248,0 L 440,0 L 344,148 L 260,148 L 292,98 L 328,98 L 360,48 L 272,48 Z" fill="url(#mpBlueFront)" />
   </g>
 </svg>

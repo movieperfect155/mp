@@ -1,52 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="sqGradBar1" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0f4ec7" />
-      <stop offset="100%" stop-color="#185ee0" />
+    <linearGradient id="appBlueFront" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0055b8" />
+      <stop offset="100%" stop-color="#004ca8" />
     </linearGradient>
-    <linearGradient id="sqGradShadow1" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b2469" />
-      <stop offset="100%" stop-color="#061642" />
-    </linearGradient>
-    <linearGradient id="sqGradPeak" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#165edf" />
-      <stop offset="100%" stop-color="#2475f5" />
-    </linearGradient>
-    <linearGradient id="sqGradShadow2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0c256a" />
-      <stop offset="100%" stop-color="#061745" />
-    </linearGradient>
-    <linearGradient id="sqGradPStem" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0a6be8" />
-      <stop offset="100%" stop-color="#1b8bf5" />
-    </linearGradient>
-    <linearGradient id="sqGradPLoop" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1b90f8" />
-      <stop offset="100%" stop-color="#0080ff" />
+    <linearGradient id="appBlueShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#002b70" />
+      <stop offset="100%" stop-color="#002058" />
     </linearGradient>
   </defs>
 
-  <!-- Pure White Background with rounded corners for native app icon -->
   <rect width="512" height="512" fill="#ffffff" />
 
-  <!-- Prominently Centered MP Emblem -->
-  <g transform="translate(68, 146) scale(0.85)">
-    <!-- 1. M Left-most slanted bar -->
-    <polygon points="50,110 106,110 56,215 0,215" fill="url(#sqGradBar1)" />
-
-    <!-- 2. Left internal shadow facet -->
-    <polygon points="106,110 144,110 94,215 56,215" fill="url(#sqGradShadow1)" />
-
-    <!-- 3. M Middle upward stroke to peak -->
-    <polygon points="144,110 200,10 156,10 94,215" fill="url(#sqGradPeak)" />
-
-    <!-- 4. M to P downward shadow fold -->
-    <polygon points="200,10 236,10 176,215 142,215" fill="url(#sqGradShadow2)" />
-
-    <!-- 5. P Main upright ribbon stem -->
-    <polygon points="236,10 292,10 196,215 176,215" fill="url(#sqGradPStem)" />
-
-    <!-- 6. P Head loop -->
-    <path d="M 276,10 L 440,10 L 388,124 L 272,124 L 298,70 L 356,70 L 370,38 L 290,38 Z" fill="url(#sqGradPLoop)" />
+  <g transform="translate(68, 155) scale(0.84)">
+    <polygon points="0,250 76,250 152,130 76,130" fill="url(#appBlueFront)" />
+    <polygon points="76,130 152,130 196,250 120,250" fill="url(#appBlueShadow)" />
+    <polygon points="120,250 196,250 238,65 162,65" fill="url(#appBlueFront)" />
+    <polygon points="162,65 238,65 282,250 206,250" fill="url(#appBlueShadow)" />
+    <polygon points="206,250 282,250 324,0 248,0" fill="url(#appBlueFront)" />
+    <path d="M 248,0 L 440,0 L 344,148 L 260,148 L 292,98 L 328,98 L 360,48 L 272,48 Z" fill="url(#appBlueFront)" />
   </g>
 </svg>
