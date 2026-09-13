@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Connection test document
+    match /test/connection {
+      allow read, write: if true;
+    }
+
+    match /posters/{posterId} {
+      // Anyone can view posters (Instant View for Visitors without login or sync)
+      allow read: if true;
+      
+      // Allow write with poster validation
+      allow create, update: if isValidPoster();
+      allow delete: if true;
+    }
+
+    function isValidPoster() {
+      let data = request.resource.data;
+      return data.id is string
+        && data.id.size() > 0
+        && data.id.size() <= 128
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 300
+        && data.type in ['movie', 'series']
+        && data.imageUrl is string
+        && data.imageUrl.size() > 0;
+    }
+  }
+}

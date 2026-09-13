@@ -1,0 +1,91 @@
+{
+  "entities": {
+    "Poster": {
+      "title": "Poster",
+      "description": "Movie or Series poster catalog item",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique poster identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Movie or Series title",
+          "maxLength": 300
+        },
+        "type": {
+          "type": "string",
+          "enum": ["movie", "series"],
+          "description": "Type of media"
+        },
+        "year": {
+          "type": "number",
+          "description": "Release year"
+        },
+        "country": {
+          "type": "string",
+          "enum": ["Korea", "Thai", "China", "English", "Bollywood"],
+          "description": "Country of origin for series"
+        },
+        "genre": {
+          "type": "string",
+          "description": "Movie/Series genre",
+          "maxLength": 150
+        },
+        "rating": {
+          "type": "number",
+          "description": "Rating score out of 10"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Image URL or data URI"
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "Thumbnail preview URL"
+        },
+        "driveFileId": {
+          "type": "string",
+          "description": "Google Drive File ID"
+        },
+        "driveWebViewLink": {
+          "type": "string",
+          "description": "Google Drive preview link"
+        },
+        "folderName": {
+          "type": "string",
+          "description": "Source folder name"
+        },
+        "originalFileName": {
+          "type": "string",
+          "description": "Original file name"
+        },
+        "orderIndex": {
+          "type": "number",
+          "description": "Custom sorting order"
+        },
+        "description": {
+          "type": "string",
+          "description": "Overview synopsis",
+          "maxLength": 2000
+        },
+        "addedAt": {
+          "type": "string",
+          "description": "ISO timestamp when added"
+        },
+        "isCustomUpload": {
+          "type": "boolean",
+          "description": "Whether uploaded locally"
+        }
+      },
+      "required": ["id", "title", "type", "imageUrl"]
+    }
+  },
+  "firestore": {
+    "/posters/{posterId}": {
+      "schema": "Poster",
+      "description": "Collection of cinema and series posters available to all visitors"
+    }
+  }
+}

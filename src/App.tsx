@@ -2,7 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { User } from 'firebase/auth';
 import { ActiveTab, Poster, MediaType, SeriesCountry } from './types';
 import { INITIAL_POSTERS } from './data/initialPosters';
-import { initAuth, googleSignIn, logout, getAccessToken } from './services/firebase';
+import {
+  initAuth,
+  googleSignIn,
+  logout,
+  getAccessToken,
+  testFirestoreConnection,
+  subscribeToPosters,
+  savePosterToFirestore,
+  batchSavePostersToFirestore,
+  deletePosterFromFirestore,
+  batchDeletePostersFromFirestore,
+} from './services/firebase';
 import { deleteDriveFile } from './services/driveService';
 import { Navbar } from './components/Navbar';
 import { HomeView } from './components/HomeView';
@@ -136,7 +147,7 @@ export default function App() {
   // Controls are only visible if user is admin AND not previewing as visitor
   const showAdminControls = isAdmin && !isVisitorPreview;
 
-  // Persist posters changes
+  // Persist posters changes locally
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(posters));
@@ -144,6 +155,38 @@ export default function App() {
       console.warn('Failed to save posters to localStorage', e);
     }
   }, [posters]);
+
+  // Auto Cloud Sync: Listen for Firestore real-time updates (Instant View for Visitors!)
+  useEffect(() => {
+    testFirestoreConnection();
+    const unsubscribe = subscribeToPosters(
+      (firestorePosters) => {
+        if (firestorePosters && firestorePosters.length > 0) {
+          setPosters(firestorePosters);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(firestorePosters));
+          } catch {}
+        } else {
+          // If Firestore is empty but we have local posters, auto-upload to Firestore so visitors see them!
+          setPosters((prev) => {
+            if (prev.length > 0) {
+              batchSavePostersToFirestore(prev).catch((err) =>
+                console.warn('Auto upload local posters to Firestore:', err)
+              );
+            }
+            return prev;
+          });
+        }
+      },
+      (error) => {
+        console.warn('Firestore subscription fallback:', error);
+      }
+    );
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
 
   // Initialize Firebase Auth listener
   useEffect(() => {
@@ -237,7 +280,11 @@ export default function App() {
       );
       return [newPoster, ...filtered];
     });
-    showToast(`"${newPoster.title}" added to ${newPoster.type === 'movie' ? 'Movies' : 'Series'}!`);
+    // Auto-save to Firestore (Cloud Database)
+    savePosterToFirestore(newPoster).catch((err) => {
+      console.warn('Firestore save error:', err);
+    });
+    showToast(`"${newPoster.title}" added to ${newPoster.type === 'movie' ? 'Movies' : 'Series'} (Cloud တွင် သိမ်းဆည်းပြီး)!`);
   };
 
   // Batch join multiple posters from Drive folders (with UPSERT support)
@@ -263,33 +310,77 @@ export default function App() {
       // Combine newly imported/updated posters at the front
       return [...newPosters, ...remainingPrev];
     });
+
+    // Auto batch save to Firestore (Cloud Database)
+    batchSavePostersToFirestore(newPosters).catch((err) => {
+      console.warn('Firestore batch save error:', err);
+    });
+
     showToast(
-      `Google Drive မှ ပုံ ${newPosters.length} ပုံအား သက်ဆိုင်ရာ ခုနှစ်အလိုက် အောင်မြင်စွာ သွင်းယူ/အဆင့်မြှင့်တင်ပြီးပါပြီ!`,
+      `Google Drive မှ ပုံ ${newPosters.length} ပုံအား Cloud Database တွင် အလိုအလျောက် သိမ်းဆည်းပြီးပါပြီ! (အခြားသူများ တန်းကြည့်နိုင်ပါပြီ)`,
       'success'
     );
   };
 
   // Delete all posters from a specific imported folder
   const handleDeleteByFolder = (folderName: string) => {
+    const toDeleteIds: string[] = [];
     setPosters((prev) => {
       const remaining = prev.filter((p) => {
         const pFolder = p.folderName || 'Drive Unsorted / Direct Uploads';
-        return pFolder !== folderName;
+        if (pFolder === folderName) {
+          toDeleteIds.push(p.id);
+          return false;
+        }
+        return true;
       });
       return remaining;
     });
+    if (toDeleteIds.length > 0) {
+      batchDeletePostersFromFirestore(toDeleteIds).catch((err) =>
+        console.warn('Batch delete from Firestore error:', err)
+      );
+    }
     showToast(`Folder "${folderName}" မှ ပုံများ အားလုံး ဖျက်ပြီးပါပြီ။`, 'info');
   };
 
   // Delete all posters from a specific year (e.g. 2026 or 2025)
   const handleDeleteByYear = (year: number) => {
-    setPosters((prev) => prev.filter((p) => p.year !== year));
+    const toDeleteIds: string[] = [];
+    setPosters((prev) =>
+      prev.filter((p) => {
+        if (p.year === year) {
+          toDeleteIds.push(p.id);
+          return false;
+        }
+        return true;
+      })
+    );
+    if (toDeleteIds.length > 0) {
+      batchDeletePostersFromFirestore(toDeleteIds).catch((err) =>
+        console.warn('Batch delete from Firestore error:', err)
+      );
+    }
     showToast(`${year} ခုနှစ် ပုံများ အားလုံး ဖယ်ရှားပြီးပါပြီ။`, 'info');
   };
 
   // Delete all Drive-synced posters with 1-click
   const handleDeleteAllDrivePosters = () => {
-    setPosters((prev) => prev.filter((p) => !p.driveFileId));
+    const toDeleteIds: string[] = [];
+    setPosters((prev) =>
+      prev.filter((p) => {
+        if (p.driveFileId) {
+          toDeleteIds.push(p.id);
+          return false;
+        }
+        return true;
+      })
+    );
+    if (toDeleteIds.length > 0) {
+      batchDeletePostersFromFirestore(toDeleteIds).catch((err) =>
+        console.warn('Batch delete from Firestore error:', err)
+      );
+    }
     showToast('Google Drive မှ သွင်းထားသော ပုံများ အားလုံး ရှင်းထုတ်ပြီးပါပြီ။', 'info');
   };
 
@@ -304,6 +395,31 @@ export default function App() {
         importedPosters.forEach((p) => existingMap.set(p.id, p));
         return Array.from(existingMap.values());
       });
+    }
+    // Also batch save to Firestore so visitors see them immediately
+    batchSavePostersToFirestore(importedPosters)
+      .then(() => {
+        showToast(
+          'Cloud Database ပေါ်သို့လည်း အောင်မြင်စွာ တင်ပြီးပါပြီ! အခြားသူများ မည်သည့် Sync မှ လုပ်စရာမလိုဘဲ တန်းမြင်နိုင်ပါပြီ။',
+          'success'
+        );
+      })
+      .catch((err) => {
+        console.error('Error syncing imported posters to Firestore:', err);
+      });
+  };
+
+  // Force manual cloud sync
+  const handleForceCloudSync = async () => {
+    if (posters.length === 0) {
+      showToast('လက်ရှိတွင် တင်ရန် ပိုစတာ မရှိသေးပါ', 'info');
+      return;
+    }
+    try {
+      await batchSavePostersToFirestore(posters);
+      showToast(`လက်ရှိ ပိုစတာ ${posters.length} ပုံလုံးအား Cloud Database ပေါ်သို့ အောင်မြင်စွာ တင်ပြီးပါပြီ!`, 'success');
+    } catch (err: any) {
+      showToast('Cloud သို့ တင်ရာတွင် အမှားဖြစ်ပေါ်ခဲ့ပါသည်: ' + (err.message || ''), 'error');
     }
   };
 
@@ -326,6 +442,9 @@ export default function App() {
       }
 
       setPosters((prev) => prev.filter((p) => p.id !== poster.id));
+      await deletePosterFromFirestore(poster.id).catch((err) =>
+        console.warn('Firestore delete error:', err)
+      );
       setIsDeleteModalOpen(false);
       setPosterToDelete(null);
       if (selectedPoster?.id === poster.id) {
@@ -644,6 +763,7 @@ export default function App() {
         posters={posters}
         onImportPosters={handleImportCatalog}
         showToast={showToast}
+        onForceCloudSync={handleForceCloudSync}
       />
 
       {/* Admin Unlock Modal */}

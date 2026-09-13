@@ -23,6 +23,7 @@ interface SyncCatalogModalProps {
   posters: Poster[];
   onImportPosters: (imported: Poster[], replaceAll?: boolean) => void;
   showToast: (text: string, type?: 'success' | 'info' | 'error') => void;
+  onForceCloudSync?: () => Promise<void>;
 }
 
 export const SyncCatalogModal: React.FC<SyncCatalogModalProps> = ({
@@ -31,6 +32,7 @@ export const SyncCatalogModal: React.FC<SyncCatalogModalProps> = ({
   posters,
   onImportPosters,
   showToast,
+  onForceCloudSync,
 }) => {
   const [tab, setTab] = useState<'export' | 'import'>('export');
   const [copied, setCopied] = useState(false);
@@ -38,6 +40,7 @@ export const SyncCatalogModal: React.FC<SyncCatalogModalProps> = ({
   const [replaceMode, setReplaceMode] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
 
   if (!isOpen) return null;
 
@@ -214,6 +217,41 @@ export const SyncCatalogModal: React.FC<SyncCatalogModalProps> = ({
         {/* Tab 1: Export from Phone */}
         {tab === 'export' && (
           <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-1">
+            {/* Auto Cloud Sync Active Banner */}
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-950/70 to-teal-950/70 border border-emerald-700/60 flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 mt-0.5 shrink-0">
+                <RefreshCw className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-emerald-300">
+                    ⚡ Auto Cloud Save & Instant View (Firestore Active)
+                  </h4>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
+                    အွန်လိုင်း ချိတ်ဆက်ထားသည်
+                  </span>
+                </div>
+                <p className="text-[11px] text-zinc-300 leading-relaxed">
+                  သင် Upload တင်ထားသော ပုံများကို Cloud Database တွင် အလိုအလျောက် သိမ်းဆည်းထားပြီး ဖြစ်ပါသည်။ <b>အခြားသူများ Link ကို ဖွင့်ကြည့်ပါက မည်သည့် Sync မှ လုပ်စရာမလိုဘဲ ပုံများ အလိုအလျောက် တန်းပေါ်နေပါမည်!</b>
+                </p>
+                {onForceCloudSync && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsCloudSyncing(true);
+                      await onForceCloudSync();
+                      setIsCloudSyncing(false);
+                    }}
+                    disabled={isCloudSyncing}
+                    className="mt-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isCloudSyncing ? 'animate-spin' : ''}`} />
+                    <span>{isCloudSyncing ? 'Cloud ပေါ်သို့ တင်နေပါသည်...' : '☁️ လက်ရှိ ပိုစတာအားလုံး Cloud သို့ သိမ်းဆည်းမည် (Force Sync)'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="p-4 rounded-xl bg-zinc-950/70 border border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-zinc-300">လက်ရှိ စုစုပေါင်း ဇာတ်ကားပုံများ:</span>
