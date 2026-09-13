@@ -6,4 +6,17 @@ body {
   width: 100%;
   max-width: 100vw;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
+
+/* Remove 300ms mobile tap delay and optimize touch responsiveness */
+button,
+a,
+input,
+select,
+[role="button"],
+.cursor-pointer {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+

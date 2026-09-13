@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Film, Calendar, Search, UploadCloud, Folder, ArrowUpDown, Hash, LayoutGrid, Grid } from 'lucide-react';
 import { Poster, MovieYear } from '../types';
 import { PosterCard } from './PosterCard';
@@ -23,39 +23,42 @@ export const MovieView: React.FC<MovieViewProps> = ({
 }) => {
   const [selectedYear, setSelectedYear] = useState<MovieYear | 'all'>('all');
   const [selectedFolder, setSelectedFolder] = useState<string | 'all'>('all');
-  const [sortMode, setSortMode] = useState<SortMode>('numeric');
+  const [sortMode, setSortMode] = useState<SortMode>('z-to-a');
   const [search, setSearch] = useState('');
   const [viewSize, setViewSize] = useState<'large' | 'compact'>('large');
 
-  // Filter only movies
-  const movies = posters.filter((p) => p.type === 'movie');
+  // Filter only movies with useMemo
+  const movies = useMemo(() => posters.filter((p) => p && p.type === 'movie'), [posters]);
 
   // Extract distinct folders from movies
-  const availableFolders = Array.from(
-    new Set(movies.map((m) => m.folderName).filter(Boolean))
-  ) as string[];
+  const availableFolders = useMemo(() => {
+    return Array.from(
+      new Set(movies.map((m) => m.folderName).filter(Boolean))
+    ) as string[];
+  }, [movies]);
 
-  // Filter movies
-  const filtered = movies.filter((m) => {
-    const matchesYear =
-      selectedFolder !== 'all' ||
-      selectedYear === 'all' ||
-      m.year === selectedYear;
-    const matchesFolder = selectedFolder === 'all' || m.folderName === selectedFolder;
-    const q = search.toLowerCase();
-    const title = (m.title || '').toLowerCase();
-    const genre = (m.genre || '').toLowerCase();
-    const folder = (m.folderName || '').toLowerCase();
-    const matchesSearch =
-      !search.trim() ||
-      title.includes(q) ||
-      genre.includes(q) ||
-      folder.includes(q);
-    return matchesYear && matchesFolder && matchesSearch;
-  });
+  // Filter movies with useMemo
+  const sortedMovies = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filtered = movies.filter((m) => {
+      const matchesYear =
+        selectedFolder !== 'all' ||
+        selectedYear === 'all' ||
+        m.year === selectedYear;
+      const matchesFolder = selectedFolder === 'all' || m.folderName === selectedFolder;
+      const title = (m.title || '').toLowerCase();
+      const genre = (m.genre || '').toLowerCase();
+      const folder = (m.folderName || '').toLowerCase();
+      const matchesSearch =
+        !q ||
+        title.includes(q) ||
+        genre.includes(q) ||
+        folder.includes(q);
+      return matchesYear && matchesFolder && matchesSearch;
+    });
 
-  // Apply natural numerical sorting
-  const sortedMovies = sortPosters(filtered, sortMode);
+    return sortPosters(filtered, sortMode);
+  }, [movies, selectedYear, selectedFolder, search, sortMode]);
 
   return (
     <div className="space-y-6 pb-16">
@@ -99,20 +102,17 @@ export const MovieView: React.FC<MovieViewProps> = ({
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               className="bg-transparent text-xs text-white font-bold focus:outline-none cursor-pointer"
             >
-              <option value="numeric" className="bg-zinc-900 text-white">
-                🔢 နံပါတ် အစဉ်လိုက် (1, 2, 3... 10)
+              <option value="z-to-a" className="bg-zinc-900 text-white">
+                ⚡ Z → A (Update အသစ်များ ထိပ်ဆုံး)
+              </option>
+              <option value="a-to-z" className="bg-zinc-900 text-white">
+                🔤 A → Z (အစမှ အဆုံး)
               </option>
               <option value="year-desc" className="bg-zinc-900 text-white">
                 📅 ခုနှစ် (၂၀၂၆ → ၂၀၂၁)
               </option>
               <option value="rating-desc" className="bg-zinc-900 text-white">
                 ★ Rating အမြင့်ဆုံး
-              </option>
-              <option value="title-asc" className="bg-zinc-900 text-white">
-                🔤 အမည် (A → Z)
-              </option>
-              <option value="title-desc" className="bg-zinc-900 text-white">
-                🔤 အမည် (Z → A)
               </option>
             </select>
           </div>

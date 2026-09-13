@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Tv, Globe, Search, UploadCloud, Folder, ArrowUpDown, Calendar, LayoutGrid, Grid, Hash } from 'lucide-react';
 import { Poster, SeriesCountry, SeriesYear } from '../types';
 import { PosterCard } from './PosterCard';
@@ -25,40 +25,42 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
   const [selectedCountry, setSelectedCountry] = useState<SeriesCountry | 'all'>('all');
   const [selectedYear, setSelectedYear] = useState<SeriesYear | 'all'>('all');
   const [selectedFolder, setSelectedFolder] = useState<string | 'all'>('all');
-  const [sortMode, setSortMode] = useState<SortMode>('numeric');
+  const [sortMode, setSortMode] = useState<SortMode>('z-to-a');
   const [search, setSearch] = useState('');
   const [viewSize, setViewSize] = useState<'large' | 'compact'>('large');
 
-  // Filter only series
-  const series = posters.filter((p) => p.type === 'series');
+  // Filter only series with useMemo
+  const series = useMemo(() => posters.filter((p) => p && p.type === 'series'), [posters]);
 
   // Extract distinct folders from series
-  const availableFolders = Array.from(
-    new Set(series.map((s) => s.folderName).filter(Boolean))
-  ) as string[];
+  const availableFolders = useMemo(() => {
+    return Array.from(
+      new Set(series.map((s) => s.folderName).filter(Boolean))
+    ) as string[];
+  }, [series]);
 
-  const filteredSeries = series.filter((s) => {
-    const matchesCountry = selectedCountry === 'all' || s.country === selectedCountry;
-    // If a folder is selected, show all folder series regardless of year
-    const matchesYear =
-      selectedFolder !== 'all' ||
-      selectedYear === 'all' ||
-      s.year === selectedYear;
-    const matchesFolder = selectedFolder === 'all' || s.folderName === selectedFolder;
-    const q = search.toLowerCase();
-    const title = (s.title || '').toLowerCase();
-    const genre = (s.genre || '').toLowerCase();
-    const folder = (s.folderName || '').toLowerCase();
-    const matchesSearch =
-      !search.trim() ||
-      title.includes(q) ||
-      genre.includes(q) ||
-      folder.includes(q);
-    return matchesCountry && matchesYear && matchesFolder && matchesSearch;
-  });
+  const sortedSeries = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const filteredSeries = series.filter((s) => {
+      const matchesCountry = selectedCountry === 'all' || s.country === selectedCountry;
+      const matchesYear =
+        selectedFolder !== 'all' ||
+        selectedYear === 'all' ||
+        s.year === selectedYear;
+      const matchesFolder = selectedFolder === 'all' || s.folderName === selectedFolder;
+      const title = (s.title || '').toLowerCase();
+      const genre = (s.genre || '').toLowerCase();
+      const folder = (s.folderName || '').toLowerCase();
+      const matchesSearch =
+        !q ||
+        title.includes(q) ||
+        genre.includes(q) ||
+        folder.includes(q);
+      return matchesCountry && matchesYear && matchesFolder && matchesSearch;
+    });
 
-  // Apply natural numerical sorting
-  const sortedSeries = sortPosters(filteredSeries, sortMode);
+    return sortPosters(filteredSeries, sortMode);
+  }, [series, selectedCountry, selectedYear, selectedFolder, search, sortMode]);
 
   return (
     <div className="space-y-6 pb-16">
@@ -102,20 +104,17 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
               onChange={(e) => setSortMode(e.target.value as SortMode)}
               className="bg-transparent text-xs text-white font-bold focus:outline-none cursor-pointer"
             >
-              <option value="numeric" className="bg-zinc-900 text-white">
-                🔢 နံပါတ် အစဉ်လိုက် (1, 2, 3... 10)
+              <option value="z-to-a" className="bg-zinc-900 text-white">
+                ⚡ Z → A (Update အသစ်များ ထိပ်ဆုံး)
+              </option>
+              <option value="a-to-z" className="bg-zinc-900 text-white">
+                🔤 A → Z (အစမှ အဆုံး)
               </option>
               <option value="year-desc" className="bg-zinc-900 text-white">
                 📅 ခုနှစ် (၂၀၂၆ → ၂၀၂၁)
               </option>
               <option value="rating-desc" className="bg-zinc-900 text-white">
                 ★ Rating အမြင့်ဆုံး
-              </option>
-              <option value="title-asc" className="bg-zinc-900 text-white">
-                🔤 အမည် (A → Z)
-              </option>
-              <option value="title-desc" className="bg-zinc-900 text-white">
-                🔤 အမည် (Z → A)
               </option>
             </select>
           </div>

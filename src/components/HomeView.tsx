@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Film, Tv, Sparkles, ChevronRight, Search, UploadCloud, LayoutGrid, Grid } from 'lucide-react';
 import { Poster, ActiveTab } from '../types';
 import { PosterCard } from './PosterCard';
 import { BrandLogo } from './BrandLogo';
-import { comparePostersNumerically } from '../utils/sortUtils';
+import { comparePostersZToA } from '../utils/sortUtils';
 
 interface HomeViewProps {
   posters: Poster[];
@@ -27,42 +27,35 @@ export const HomeView: React.FC<HomeViewProps> = ({
   isAdmin = false,
 }) => {
   const [viewSize, setViewSize] = useState<'large' | 'compact'>('large');
-  // Filter by search
-  const filtered = posters.filter((p) => {
-    if (!p) return false;
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    const title = (p.title || '').toLowerCase();
-    const genre = (p.genre || '').toLowerCase();
-    const country = (p.country || '').toLowerCase();
-    const year = (p.year || '').toString();
-    return title.includes(q) || genre.includes(q) || country.includes(q) || year.includes(q);
-  });
 
-  // Sort movies and series so 2026 releases appear first, and items in the same year/folder are naturally numbered
-  const movies = filtered
-    .filter((p) => p && p.type === 'movie')
-    .sort((a, b) => {
-      const yearB = b.year || 0;
-      const yearA = a.year || 0;
-      if (yearB !== yearA) return yearB - yearA;
-      return comparePostersNumerically(a, b);
+  // Filter and sort movies and series using useMemo to keep touch & tap interactions 60fps fast
+  const { movies, series, featured } = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = posters.filter((p) => {
+      if (!p) return false;
+      if (!q) return true;
+      const title = (p.title || '').toLowerCase();
+      const genre = (p.genre || '').toLowerCase();
+      const country = (p.country || '').toLowerCase();
+      const year = (p.year || '').toString();
+      return title.includes(q) || genre.includes(q) || country.includes(q) || year.includes(q);
     });
 
-  const series = filtered
-    .filter((p) => p && p.type === 'series')
-    .sort((a, b) => {
-      const yearB = b.year || 0;
-      const yearA = a.year || 0;
-      if (yearB !== yearA) return yearB - yearA;
-      return comparePostersNumerically(a, b);
-    });
+    const m = filtered
+      .filter((p) => p && p.type === 'movie')
+      .sort((a, b) => comparePostersZToA(a, b));
 
-  // Featured hero poster (prioritize latest 2026 custom upload or first 2026 poster)
-  const featured =
-    posters.find((p) => p.year === 2026 && p.isCustomUpload) ||
-    posters.find((p) => p.year === 2026) ||
-    posters[0];
+    const s = filtered
+      .filter((p) => p && p.type === 'series')
+      .sort((a, b) => comparePostersZToA(a, b));
+
+    const feat =
+      posters.find((p) => p.year === 2026 && p.isCustomUpload) ||
+      posters.find((p) => p.year === 2026) ||
+      posters[0];
+
+    return { movies: m, series: s, featured: feat };
+  }, [posters, searchQuery]);
 
   return (
     <div className="space-y-10 pb-16">

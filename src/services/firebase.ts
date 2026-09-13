@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 import { Poster } from '../types';
+import { comparePostersZToA } from '../utils/sortUtils';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
@@ -55,13 +56,8 @@ export const subscribeToPosters = (
           items.push(data);
         }
       });
-      // Sort by addedAt descending or orderIndex
-      items.sort((a, b) => {
-        if (a.orderIndex !== undefined && b.orderIndex !== undefined) {
-          return a.orderIndex - b.orderIndex;
-        }
-        return new Date(b.addedAt || 0).getTime() - new Date(a.addedAt || 0).getTime();
-      });
+      // Sort by Z - A descending so newest/update photos appear at the top
+      items.sort(comparePostersZToA);
       onUpdate(items);
     },
     (err) => {
@@ -82,12 +78,8 @@ export const fetchPostersFromFirestore = async (): Promise<Poster[]> => {
       items.push(data);
     }
   });
-  items.sort((a, b) => {
-    if (a.orderIndex !== undefined && b.orderIndex !== undefined) {
-      return a.orderIndex - b.orderIndex;
-    }
-    return new Date(b.addedAt || 0).getTime() - new Date(a.addedAt || 0).getTime();
-  });
+  // Sort by Z - A descending so newest/update photos appear at the top
+  items.sort(comparePostersZToA);
   return items;
 };
 
