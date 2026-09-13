@@ -41,7 +41,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [movieYear, setMovieYear] = useState<MovieYear | ''>(
     initialYear && initialYear >= 2021 && initialYear <= 2026 ? (initialYear as MovieYear) : 2026
   );
-  const [country, setCountry] = useState<SeriesCountry>(initialCountry);
+  const [country, setCountry] = useState<SeriesCountry | undefined>(initialCountry);
   const [genre, setGenre] = useState('');
   const [rating, setRating] = useState('8.5');
   const [description, setDescription] = useState('');
@@ -53,7 +53,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [folderFiles, setFolderFiles] = useState<File[]>([]);
   const [folderPreviews, setFolderPreviews] = useState<string[]>([]);
   const [folderType, setFolderType] = useState<MediaType>(initialType);
-  const [folderCountry, setFolderCountry] = useState<SeriesCountry>(initialCountry);
+  const [folderCountry, setFolderCountry] = useState<SeriesCountry | undefined>(initialCountry);
 
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgressText, setUploadProgressText] = useState('');
@@ -503,13 +503,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">
                   Series Origin / Region (ဒေသ ရွေးချယ်ရန်)
                 </label>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
                   {SERIES_COUNTRIES.map((c) => (
                     <button
                       key={c}
                       type="button"
                       onClick={() => setCountry(c)}
-                      className={`py-2 px-2 rounded-lg text-xs font-bold border transition-all text-center ${
+                      className={`py-2 px-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
                         country === c
                           ? 'bg-emerald-600 border-emerald-500 text-white shadow-md'
                           : 'bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
@@ -518,6 +518,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       {c}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => setCountry(undefined)}
+                    className={`py-2 px-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
+                      country === undefined
+                        ? 'bg-emerald-600 border-emerald-500 text-white shadow-md'
+                        : 'bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
+                    }`}
+                  >
+                    🚫 နိုင်ငံ မထည့်ပါ
+                  </button>
                 </div>
               </div>
             )}
@@ -715,13 +726,13 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                 <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400 mb-1">
                   Series Origin / Region (ဒေသ / နိုင်ငံ ရွေးချယ်ရန်)
                 </label>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
                   {SERIES_COUNTRIES.map((c) => (
                     <button
                       key={c}
                       type="button"
                       onClick={() => setFolderCountry(c)}
-                      className={`py-2 px-2 rounded-lg text-xs font-bold border transition-all text-center ${
+                      className={`py-2 px-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
                         folderCountry === c
                           ? 'bg-emerald-600 border-emerald-500 text-white shadow-md'
                           : 'bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
@@ -730,6 +741,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
                       {c}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => setFolderCountry(undefined)}
+                    className={`py-2 px-1.5 rounded-lg text-xs font-bold border transition-all text-center ${
+                      folderCountry === undefined
+                        ? 'bg-emerald-600 border-emerald-500 text-white shadow-md'
+                        : 'bg-zinc-800/80 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
+                    }`}
+                  >
+                    🚫 နိုင်ငံ မထည့်ပါ
+                  </button>
                 </div>
               </div>
             )}

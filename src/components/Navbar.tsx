@@ -80,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <BrandLogo size="md" />
               <div className="flex flex-col">
                 <span className="text-sm sm:text-xl font-black tracking-tight text-white flex items-center gap-1.5 leading-tight">
-                  Movie Perfect
+                  Mobile Perfect
                   <span className="text-[8px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30">
                     CINEMA
                   </span>

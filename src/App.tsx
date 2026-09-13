@@ -506,7 +506,7 @@ export default function App() {
         <div className={`${showAdminControls ? 'flex' : 'hidden sm:flex'} mb-4 sm:mb-6 p-2.5 sm:p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/80 flex-wrap items-center justify-between gap-2.5 sm:gap-3 text-xs`}>
           <div className="flex items-center gap-2 text-zinc-400">
             <BrandLogo size="sm" />
-            <span className="font-bold text-zinc-200">Movie Perfect</span>
+            <span className="font-bold text-zinc-200">Mobile Perfect</span>
             <span>/</span>
             <span className="text-sky-400 font-semibold capitalize">
               {activeTab === 'home' ? 'Home (🎬 Movie & 📺 Series)' : activeTab}
@@ -612,7 +612,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <BrandLogo size="sm" />
             <div className="flex items-center gap-2">
-              <span className="font-bold text-zinc-200">Movie Perfect</span>
+              <span className="font-bold text-zinc-200">Mobile Perfect</span>
               <span className="text-zinc-600">•</span>
               <span>Cinema & Series Poster Vault</span>
             </div>

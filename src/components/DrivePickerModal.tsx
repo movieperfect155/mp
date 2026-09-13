@@ -81,7 +81,7 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
   const [directType, setDirectType] = useState<MediaType>('movie');
   const [directMovieYear, setDirectMovieYear] = useState<MovieYear>(2026);
   const [directSeriesYear, setDirectSeriesYear] = useState<SeriesYear>(2026);
-  const [directCountry, setDirectCountry] = useState<SeriesCountry>('Korea');
+  const [directCountry, setDirectCountry] = useState<SeriesCountry | undefined>('Korea');
   const [directGenre, setDirectGenre] = useState('');
   const [directSuccessMsg, setDirectSuccessMsg] = useState<string | null>(null);
 
@@ -91,7 +91,7 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
   const [singleType, setSingleType] = useState<MediaType>('movie');
   const [singleMovieYear, setSingleMovieYear] = useState<MovieYear>(2026);
   const [singleSeriesYear, setSingleSeriesYear] = useState<SeriesYear>(2026);
-  const [singleCountry, setSingleCountry] = useState<SeriesCountry>('Korea');
+  const [singleCountry, setSingleCountry] = useState<SeriesCountry | undefined>('Korea');
   const [singleGenre, setSingleGenre] = useState('');
 
   // Fetch Drive photos and folders when modal opens
@@ -179,7 +179,7 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
     updates: Partial<{
       detectedYear?: MovieYear | SeriesYear;
       detectedType: MediaType;
-      detectedCountry: SeriesCountry;
+      detectedCountry?: SeriesCountry;
     }>
   ) => {
     setFolderGroups((prev) =>
@@ -211,7 +211,7 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
           file,
           group.detectedYear,
           group.detectedType,
-          group.detectedType === 'series' ? group.detectedCountry || 'Korea' : undefined,
+          group.detectedType === 'series' ? group.detectedCountry : undefined,
           group.folderName,
           idx + 1
         )
@@ -270,7 +270,7 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
                 file,
                 group.detectedYear,
                 group.detectedType,
-                group.detectedType === 'series' ? group.detectedCountry || 'Korea' : undefined,
+                group.detectedType === 'series' ? group.detectedCountry : undefined,
                 group.folderName,
                 idx + 1
               )
@@ -396,7 +396,7 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
         thumbnailUrl: secondaryUrl,
         driveFileId: fileId,
         driveWebViewLink: `https://drive.google.com/file/d/${fileId}/view`,
-        description: `${baseTitle} (${yr}) - ${directType === 'movie' ? 'Cinema Feature Poster' : `${directCountry} Series Drama Poster`}.`,
+        description: `${baseTitle} (${yr}) - ${directType === 'movie' ? 'Cinema Feature Poster' : `${directCountry ? `${directCountry} ` : ''}Series Drama Poster`}.`,
         addedAt: new Date().toISOString(),
         isCustomUpload: true,
       });
@@ -717,6 +717,17 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
                             {c}
                           </button>
                         ))}
+                        <button
+                          type="button"
+                          onClick={() => setDirectCountry(undefined)}
+                          className={`py-1.5 px-2 text-xs font-bold rounded-lg border transition-all ${
+                            directCountry === undefined
+                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-sm'
+                              : 'bg-zinc-800/80 border-zinc-700 text-zinc-400'
+                          }`}
+                        >
+                          🚫 နိုင်ငံ မထည့်ပါ
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1025,14 +1036,15 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
                             {/* Series Country Selector if Series */}
                             {group.detectedType === 'series' && (
                               <select
-                                value={group.detectedCountry || 'Korea'}
+                                value={group.detectedCountry || ''}
                                 onChange={(e) =>
                                   updateFolderConfig(group.folderId, {
-                                    detectedCountry: e.target.value as SeriesCountry,
+                                    detectedCountry: e.target.value ? (e.target.value as SeriesCountry) : undefined,
                                   })
                                 }
                                 className="px-2.5 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700 text-xs text-white font-medium focus:outline-none"
                               >
+                                <option value="">နိုင်ငံ မထည့်ပါ (No Country)</option>
                                 {SERIES_COUNTRIES.map((c) => (
                                   <option key={c} value={c}>
                                     {c}
@@ -1261,6 +1273,17 @@ export const DrivePickerModal: React.FC<DrivePickerModalProps> = ({
                                 {c}
                               </button>
                             ))}
+                            <button
+                              type="button"
+                              onClick={() => setSingleCountry(undefined)}
+                              className={`py-1 px-1.5 text-[11px] font-medium rounded border ${
+                                singleCountry === undefined
+                                  ? 'bg-emerald-600 border-emerald-500 text-white'
+                                  : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                              }`}
+                            >
+                              🚫 နိုင်ငံ မထည့်ပါ
+                            </button>
                           </div>
                         </div>
                       )}

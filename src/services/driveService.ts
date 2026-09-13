@@ -546,7 +546,7 @@ export function createPosterFromDriveFile(
     title,
     type,
     year: validYear,
-    country: type === 'series' ? country || 'Korea' : undefined,
+    country: type === 'series' ? country : undefined,
     genre: type === 'movie' ? 'Cinema / Feature' : 'Series / Drama',
     rating: undefined, // Folder import does NOT assign rating
     imageUrl: displayUrl,
@@ -557,8 +557,8 @@ export function createPosterFromDriveFile(
     originalFileName: file.name,
     orderIndex: orderIndex,
     description: validYear
-      ? `${title} (${validYear}) - ${type === 'movie' ? 'Cinema Feature Poster' : `${country || 'Asian'} Series Drama Poster`}.`
-      : `${title} - ${type === 'movie' ? 'Cinema Feature Poster' : `${country || 'Asian'} Series Drama Poster`}.`,
+      ? `${title} (${validYear}) - ${type === 'movie' ? 'Cinema Feature Poster' : `${country ? `${country} ` : ''}Series Drama Poster`}.`
+      : `${title} - ${type === 'movie' ? 'Cinema Feature Poster' : `${country ? `${country} ` : ''}Series Drama Poster`}.`,
     addedAt: file.createdTime || new Date().toISOString(),
     isCustomUpload: true,
   };

@@ -22,7 +22,7 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
   onDeletePoster,
   isAdmin = false,
 }) => {
-  const [selectedCountry, setSelectedCountry] = useState<SeriesCountry | 'all'>('all');
+  const [selectedCountry, setSelectedCountry] = useState<SeriesCountry | 'all' | 'none'>('all');
   const [selectedYear, setSelectedYear] = useState<SeriesYear | 'all'>('all');
   const [selectedFolder, setSelectedFolder] = useState<string | 'all'>('all');
   const [sortMode, setSortMode] = useState<SortMode>('z-to-a');
@@ -42,7 +42,12 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
   const sortedSeries = useMemo(() => {
     const q = search.trim().toLowerCase();
     const filteredSeries = series.filter((s) => {
-      const matchesCountry = selectedCountry === 'all' || s.country === selectedCountry;
+      const matchesCountry =
+        selectedCountry === 'all'
+          ? true
+          : selectedCountry === 'none'
+            ? !s.country
+            : s.country === selectedCountry;
       const matchesYear =
         selectedFolder !== 'all' ||
         selectedYear === 'all' ||
@@ -190,6 +195,25 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
                 </button>
               );
             })}
+
+            {/* If any series have no country assigned */}
+            {(() => {
+              const noCountryCount = series.filter((s) => !s.country).length;
+              if (noCountryCount === 0) return null;
+              return (
+                <button
+                  id="btn-series-country-none"
+                  onClick={() => setSelectedCountry('none')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    selectedCountry === 'none'
+                      ? 'bg-emerald-500 text-zinc-950 font-black shadow-md shadow-emerald-950/40'
+                      : 'bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 border border-zinc-700/60'
+                  }`}
+                >
+                  🚫 နိုင်ငံ မထည့်ထားပါ ({noCountryCount})
+                </button>
+              );
+            })()}
           </div>
 
           {/* Direct Upload Series Button for selected Region and Year */}
@@ -200,7 +224,7 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
               onClick={() =>
                 onOpenUpload({
                   type: 'series',
-                  country: selectedCountry !== 'all' ? selectedCountry : 'Korea',
+                  country: selectedCountry !== 'all' && selectedCountry !== 'none' ? selectedCountry : undefined,
                   year: selectedYear !== 'all' ? selectedYear : 2026,
                 })
               }
@@ -209,7 +233,7 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
             >
               <UploadCloud className="w-4 h-4" />
               <span>
-                + Upload {selectedCountry !== 'all' ? selectedCountry : ''} Series{' '}
+                + Upload {selectedCountry !== 'all' && selectedCountry !== 'none' ? selectedCountry : ''} Series{' '}
                 {selectedYear !== 'all' ? `[${selectedYear}]` : ''}
               </span>
             </button>
@@ -318,7 +342,7 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
             onClick={() =>
               onOpenUpload({
                 type: 'series',
-                country: selectedCountry !== 'all' ? selectedCountry : 'Korea',
+                country: selectedCountry !== 'all' && selectedCountry !== 'none' ? selectedCountry : undefined,
               })
             }
             className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold"
@@ -342,7 +366,7 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
               onClick={() =>
                 onOpenUpload({
                   type: 'series',
-                  country: selectedCountry !== 'all' ? selectedCountry : 'Korea',
+                  country: selectedCountry !== 'all' && selectedCountry !== 'none' ? selectedCountry : undefined,
                 })
               }
               className="mt-4 px-4 py-2 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-500"

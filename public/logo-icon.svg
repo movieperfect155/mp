@@ -1,54 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 220" width="340" height="220">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 250" width="500" height="250">
   <defs>
-    <linearGradient id="icoMpBlueOuter" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0052d4" />
-      <stop offset="100%" stop-color="#00319e" />
+    <!-- Facet 1: M Left Bar (Rich Royal Blue) -->
+    <linearGradient id="mpGradBar1" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f4ec7" />
+      <stop offset="100%" stop-color="#185ee0" />
     </linearGradient>
-    <linearGradient id="icoMpShadowBase" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#002166" />
-      <stop offset="100%" stop-color="#00123d" />
+
+    <!-- Facet 2: Left Shadow Valley (Deep Navy) -->
+    <linearGradient id="mpGradShadow1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b2469" />
+      <stop offset="100%" stop-color="#061642" />
     </linearGradient>
-    <linearGradient id="icoMpBluePeak" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0055ff" />
-      <stop offset="100%" stop-color="#1a75ff" />
+
+    <!-- Facet 3: M Center Peak (Vibrant Blue) -->
+    <linearGradient id="mpGradPeak" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#165edf" />
+      <stop offset="100%" stop-color="#2475f5" />
     </linearGradient>
-    <linearGradient id="icoMpShadowFold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#00267a" />
-      <stop offset="100%" stop-color="#00164a" />
+
+    <!-- Facet 4: Center-to-Right Shadow Fold (Deep Navy) -->
+    <linearGradient id="mpGradShadow2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c256a" />
+      <stop offset="100%" stop-color="#061745" />
     </linearGradient>
-    <linearGradient id="icoMpCyanStem" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0077ff" />
-      <stop offset="100%" stop-color="#00a6ff" />
+
+    <!-- Facet 5: P Upright Stem (Bright Vivid Blue) -->
+    <linearGradient id="mpGradPStem" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0a6be8" />
+      <stop offset="100%" stop-color="#1b8bf5" />
     </linearGradient>
-    <linearGradient id="icoMpCyanLoop" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0091ff" />
-      <stop offset="100%" stop-color="#38b6ff" />
+
+    <!-- Facet 6: P Head & Loop (Electric Sky/Cyan Blue) -->
+    <linearGradient id="mpGradPLoop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1b90f8" />
+      <stop offset="100%" stop-color="#0080ff" />
     </linearGradient>
   </defs>
 
-  <g transform="translate(10, 10)">
+  <g transform="translate(10, 15)">
     <!-- 1. M Left-most slanted bar -->
-    <polygon points="38,100 86,100 48,185 0,185" fill="url(#icoMpBlueOuter)" />
+    <polygon points="50,110 106,110 56,215 0,215" fill="url(#mpGradBar1)" />
 
-    <!-- 2. M Left internal shadow fold -->
-    <polygon points="86,100 114,100 76,185 48,185" fill="url(#icoMpShadowBase)" />
+    <!-- 2. Left internal shadow facet -->
+    <polygon points="106,110 144,110 94,215 56,215" fill="url(#mpGradShadow1)" />
 
     <!-- 3. M Middle upward stroke to peak -->
-    <polygon points="114,100 162,15 132,15 76,185" fill="url(#icoMpBluePeak)" />
+    <polygon points="144,110 200,10 156,10 94,215" fill="url(#mpGradPeak)" />
 
     <!-- 4. M to P downward shadow fold -->
-    <polygon points="162,15 186,15 142,185 116,185" fill="url(#icoMpShadowFold)" />
+    <polygon points="200,10 236,10 176,215 142,215" fill="url(#mpGradShadow2)" />
 
     <!-- 5. P Main upright ribbon stem -->
-    <polygon points="186,15 234,15 166,185 142,185" fill="url(#icoMpCyanStem)" />
+    <polygon points="236,10 292,10 196,215 176,215" fill="url(#mpGradPStem)" />
 
-    <!-- 6. P Top horizontal bar -->
-    <polygon points="224,15 316,15 292,72 200,72" fill="url(#icoMpCyanLoop)" />
-
-    <!-- 7. P Right slanted curve/edge -->
-    <polygon points="316,15 316,28 274,124 232,124 292,72" fill="url(#icoMpCyanLoop)" />
-
-    <!-- 8. P Bottom return loop -->
-    <polygon points="274,124 200,124 216,72 258,72" fill="url(#icoMpCyanStem)" />
+    <!-- 6. P Head loop (Combined solid polygon with counter hole) -->
+    <path d="M 276,10 L 440,10 L 388,124 L 272,124 L 298,70 L 356,70 L 370,38 L 290,38 Z" fill="url(#mpGradPLoop)" />
   </g>
 </svg>

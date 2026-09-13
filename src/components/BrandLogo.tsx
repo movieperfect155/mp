@@ -17,12 +17,12 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
 
-  // Size mapping for the logo badge
+  // Size mapping for the logo badge (generous view without excessive padding)
   const sizeClasses = {
-    sm: 'w-8 h-8 rounded-lg p-1',
-    md: 'w-10 h-10 sm:w-11 sm:h-11 rounded-xl p-1.5',
-    lg: 'w-14 h-14 rounded-2xl p-2',
-    xl: 'w-20 h-20 rounded-2xl p-2.5',
+    sm: 'w-9 h-9 rounded-lg p-0.5',
+    md: 'w-11 h-11 sm:w-12 sm:h-12 rounded-xl p-1',
+    lg: 'w-16 h-16 rounded-2xl p-1.5',
+    xl: 'w-24 h-24 rounded-2xl p-2',
   };
 
   const fullSizeClasses = {
@@ -35,11 +35,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   if (variant === 'full') {
     return (
       <div
-        className={`bg-white rounded-2xl shadow-xl border border-zinc-200 flex flex-col items-center justify-center text-center shrink-0 ${fullSizeClasses[size]} ${className}`}
+        className={`bg-white rounded-2xl shadow-xl border border-zinc-200 flex flex-col items-center justify-center text-center shrink-0 overflow-hidden ${fullSizeClasses[size]} ${className}`}
       >
         <img
           src="/logo.svg"
-          alt="Movie Perfect Logo"
+          alt="Mobile Perfect Logo"
           className="w-full h-full object-contain"
           onError={(e) => {
             (e.currentTarget as HTMLImageElement).src = '/logo.png';
@@ -51,33 +51,31 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-2.5 shrink-0 ${className}`}>
-      {/* High-contrast crisp white badge matching user's uploaded LOgo.jpg */}
+      {/* High-contrast crisp white badge matching user's uploaded logo */}
       <div
-        className={`relative bg-white shadow-md shadow-sky-950/20 border border-zinc-100/90 flex items-center justify-center shrink-0 transition-transform duration-200 hover:scale-105 overflow-hidden ${sizeClasses[size]}`}
+        className={`relative bg-white shadow-md shadow-sky-950/30 border border-zinc-100 flex items-center justify-center shrink-0 transition-transform duration-200 hover:scale-105 overflow-hidden ${sizeClasses[size]}`}
       >
         {!imgFailed ? (
           <img
             src="/logo-icon.svg"
-            alt="Movie Perfect"
+            alt="Mobile Perfect"
             className="w-full h-full object-contain"
             onError={() => setImgFailed(true)}
           />
         ) : (
-          /* Inline SVG fallback in case browser blocks external asset */
+          /* Inline SVG fallback with exact faceted geometric MP polygons */
           <svg
-            viewBox="0 0 340 220"
+            viewBox="0 0 500 250"
             className="w-full h-full"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <polygon points="38,100 86,100 48,185 0,185" fill="#0047cc" />
-            <polygon points="86,100 114,100 76,185 48,185" fill="#001a66" />
-            <polygon points="114,100 162,15 132,15 76,185" fill="#0055ff" />
-            <polygon points="162,15 186,15 142,185 116,185" fill="#00247d" />
-            <polygon points="186,15 234,15 166,185 142,185" fill="#0080ff" />
-            <polygon points="224,15 316,15 292,72 200,72" fill="#0099ff" />
-            <polygon points="316,15 316,28 274,124 232,124 292,72" fill="#24a8ff" />
-            <polygon points="274,124 200,124 216,72 258,72" fill="#0080ff" />
+            <polygon points="60,125 116,125 66,230 10,230" fill="#1555d8" />
+            <polygon points="116,125 154,125 104,230 66,230" fill="#0b2469" />
+            <polygon points="154,125 210,25 166,25 104,230" fill="#1d69f2" />
+            <polygon points="210,25 246,25 186,230 152,230" fill="#0c256a" />
+            <polygon points="246,25 302,25 206,230 186,230" fill="#0084ff" />
+            <path d="M 286,25 L 450,25 L 398,139 L 282,139 L 308,85 L 366,85 L 380,53 L 300,53 Z" fill="#0099ff" />
           </svg>
         )}
       </div>
@@ -85,7 +83,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       {showText && (
         <div className={`flex flex-col text-left ${textClassName}`}>
           <span className="text-base sm:text-lg font-black tracking-tight text-white leading-none">
-            Movie Perfect
+            Mobile Perfect
           </span>
           <span className="text-[10px] sm:text-[11px] font-semibold tracking-wider text-sky-400 uppercase mt-0.5">
             Movie & Series Vault
