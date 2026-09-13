@@ -199,6 +199,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               </>
             )}
 
+            {/* Cross-Device Sync button for Visitors (to import/sync catalog .json) */}
+            {!showAdminControls && (
+              <button
+                id="btn-nav-visitor-sync"
+                onClick={onOpenSyncModal}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-sky-950/60 hover:bg-sky-900/80 text-sky-300 hover:text-sky-200 border border-sky-800/60 transition-colors shadow-sm"
+                title="ပုံများ သွင်းယူရန် / Catalog .json ဖိုင် ထည့်သွင်းရန် (Sync)"
+              >
+                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-sky-400" />
+                <span>Sync</span>
+              </button>
+            )}
+
             {/* In-App Direct Install Button for Android/Chrome/Edge/iOS */}
             <PWAInstallButton />
 
