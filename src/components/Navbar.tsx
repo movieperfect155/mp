@@ -215,20 +215,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* In-App Direct Install Button for Android/Chrome/Edge/iOS */}
             <PWAInstallButton />
 
-            {/* Web to APK Guide (Available for all) */}
-            <button
-              id="btn-pwa-guide"
-              onClick={onOpenApkGuide}
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/60 transition-colors"
-              title="Web to APK Guide"
-            >
-              <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden xl:inline">Web / APK</span>
-            </button>
-
             {/* Admin / Owner status & Login */}
             {showAdminControls && (
               <div className="flex items-center gap-1.5 sm:gap-2 pl-1 border-l border-zinc-800">
+                {/* Web to APK Guide (Only visible in Admin Mode) */}
+                <button
+                  id="btn-pwa-guide"
+                  onClick={onOpenApkGuide}
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700/60 transition-colors"
+                  title="Web to APK Guide (Admin)"
+                >
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden xl:inline">Web / APK Guide</span>
+                </button>
+
                 <div className="hidden lg:flex flex-col items-end">
                   <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
