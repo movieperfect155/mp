@@ -6,7 +6,7 @@ import { SortMode, sortPosters } from '../utils/sortUtils';
 
 interface MovieViewProps {
   posters: Poster[];
-  onSelectPoster: (poster: Poster) => void;
+  onSelectPoster: (poster: Poster, contextList?: Poster[]) => void;
   onOpenUpload: () => void;
   onDeletePoster: (poster: Poster) => void;
   isAdmin?: boolean;
@@ -286,7 +286,7 @@ export const MovieView: React.FC<MovieViewProps> = ({
               key={poster.id}
               poster={poster}
               size={viewSize}
-              onSelect={onSelectPoster}
+              onSelect={(p) => onSelectPoster(p, sortedMovies)}
               onDelete={isAdmin ? onDeletePoster : undefined}
             />
           ))}

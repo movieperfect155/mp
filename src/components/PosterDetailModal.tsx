@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X,
+  ChevronLeft,
+  ChevronRight,
   Star,
   Calendar,
   Globe,
@@ -9,74 +11,174 @@ import {
   Trash2,
   ImageOff,
   RefreshCw,
-  Maximize2,
-  Minimize2,
   ZoomIn,
   ZoomOut,
   ExternalLink,
-  Eye,
+  Info,
+  Layers,
 } from 'lucide-react';
 import { Poster } from '../types';
 
 interface PosterDetailModalProps {
   poster: Poster | null;
+  posters?: Poster[];
   onClose: () => void;
+  onNavigatePoster?: (nextPoster: Poster) => void;
   onDelete?: (poster: Poster) => void;
+  isAdmin?: boolean;
 }
 
-export const PosterDetailModal: React.FC<PosterDetailModalProps> = ({ poster, onClose, onDelete }) => {
+export const PosterDetailModal: React.FC<PosterDetailModalProps> = ({
+  poster,
+  posters = [],
+  onClose,
+  onNavigatePoster,
+  onDelete,
+  isAdmin = false,
+}) => {
   if (!poster) return null;
 
-  return <PosterDetailModalContent poster={poster} onClose={onClose} onDelete={onDelete} />;
+  return (
+    <DirectLargePhotoViewer
+      poster={poster}
+      posters={posters}
+      onClose={onClose}
+      onNavigatePoster={onNavigatePoster}
+      onDelete={onDelete}
+      isAdmin={isAdmin}
+    />
+  );
 };
 
-const PosterDetailModalContent: React.FC<{
+interface DirectLargePhotoViewerProps {
   poster: Poster;
+  posters: Poster[];
   onClose: () => void;
+  onNavigatePoster?: (nextPoster: Poster) => void;
   onDelete?: (poster: Poster) => void;
-}> = ({ poster, onClose, onDelete }) => {
-  // Use high-resolution source for detail viewing when available
-  const getInitialHighResSrc = (p: Poster) => {
+  isAdmin?: boolean;
+}
+
+const DirectLargePhotoViewer: React.FC<DirectLargePhotoViewerProps> = ({
+  poster,
+  posters,
+  onClose,
+  onNavigatePoster,
+  onDelete,
+  isAdmin = false,
+}) => {
+  // Find current index in the active poster collection
+  const currentIndex = posters.findIndex((p) => p.id === poster.id);
+  const totalCount = posters.length;
+  const hasMultiple = totalCount > 1;
+
+  // High-resolution image source resolver
+  const getHighResSrc = (p: Poster) => {
     if (p.driveFileId) {
       return `https://drive.google.com/thumbnail?id=${p.driveFileId}&sz=w1600`;
     }
     return p.imageUrl;
   };
 
-  const [imgSrc, setImgSrc] = useState<string>(() => getInitialHighResSrc(poster));
+  const [imgSrc, setImgSrc] = useState<string>(() => getHighResSrc(poster));
   const [retryStep, setRetryStep] = useState<number>(0);
   const [hasFailedAll, setHasFailedAll] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
-  const [fitMode, setFitMode] = useState<'contain' | 'cover'>('contain');
+  const [showInfoDrawer, setShowInfoDrawer] = useState<boolean>(false);
+  const [showThumbnails, setShowThumbnails] = useState<boolean>(true);
 
-  // Reset image state whenever opened poster changes
+  // Navigation handlers (Next & Previous with wrap-around)
+  const handleGoNext = useCallback(() => {
+    if (!hasMultiple || !onNavigatePoster) return;
+    const nextIdx = (currentIndex + 1) % totalCount;
+    const nextPoster = posters[nextIdx];
+    if (nextPoster) {
+      onNavigatePoster(nextPoster);
+    }
+  }, [hasMultiple, onNavigatePoster, currentIndex, totalCount, posters]);
+
+  const handleGoPrev = useCallback(() => {
+    if (!hasMultiple || !onNavigatePoster) return;
+    const prevIdx = (currentIndex - 1 + totalCount) % totalCount;
+    const prevPoster = posters[prevIdx];
+    if (prevPoster) {
+      onNavigatePoster(prevPoster);
+    }
+  }, [hasMultiple, onNavigatePoster, currentIndex, totalCount, posters]);
+
+  // Preload adjacent images in background for instant transitions
   useEffect(() => {
-    setImgSrc(getInitialHighResSrc(poster));
+    if (!hasMultiple) return;
+    const nextIdx = (currentIndex + 1) % totalCount;
+    const prevIdx = (currentIndex - 1 + totalCount) % totalCount;
+    const adjacent = [posters[nextIdx], posters[prevIdx]];
+
+    adjacent.forEach((p) => {
+      if (p) {
+        const img = new Image();
+        img.src = getHighResSrc(p);
+      }
+    });
+  }, [currentIndex, totalCount, posters, hasMultiple]);
+
+  // Reset image state whenever poster ID changes
+  useEffect(() => {
+    setImgSrc(getHighResSrc(poster));
     setRetryStep(0);
     setHasFailedAll(false);
     setIsLoading(true);
-    setIsFullscreen(false);
     setZoomLevel(1);
   }, [poster.id, poster.imageUrl, poster.driveFileId]);
 
-  // Handle ESC key to exit fullscreen lightbox or close modal
+  // Global Keyboard Navigation: Left (Previous), Right (Next), Escape (Close)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isFullscreen) {
-          setIsFullscreen(false);
-          setZoomLevel(1);
-        } else {
-          onClose();
-        }
+      if (e.key === 'ArrowRight' || e.key === 'KeyD') {
+        e.preventDefault();
+        handleGoNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'KeyA') {
+        e.preventDefault();
+        handleGoPrev();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreen, onClose]);
+  }, [handleGoNext, handleGoPrev, onClose]);
 
+  // Touch swipe support for mobile and tablet
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+
+    // Only treat as horizontal swipe if deltaX is significantly larger than vertical movement
+    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > Math.abs(deltaY) * 1.3) {
+      if (deltaX < 0) {
+        // Swiped left -> Go Next
+        handleGoNext();
+      } else {
+        // Swiped right -> Go Prev
+        handleGoPrev();
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
+  // Resilient multi-tier fallback for Google Drive images
   const handleImageError = () => {
     if (poster.driveFileId) {
       if (retryStep === 0) {
@@ -108,10 +210,20 @@ const PosterDetailModalContent: React.FC<{
     setHasFailedAll(false);
     setIsLoading(true);
     setRetryStep(0);
-    setImgSrc(`${getInitialHighResSrc(poster)}&t=${Date.now()}`);
+    setImgSrc(`${getHighResSrc(poster)}&t=${Date.now()}`);
   };
 
-  // Clean description to avoid leaking internal Drive technical details
+  // Thumbnail thumbnail strip ref for auto-scrolling to active thumbnail
+  const thumbStripRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (thumbStripRef.current && currentIndex >= 0) {
+      const activeEl = thumbStripRef.current.children[currentIndex] as HTMLElement | undefined;
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [currentIndex]);
+
   const cleanDescription = () => {
     if (!poster.description) {
       return poster.type === 'movie' && poster.year
@@ -127,370 +239,399 @@ const PosterDetailModalContent: React.FC<{
   };
 
   return (
-    <>
-      {/* Main Poster Detail Modal */}
-      <div
-        id="poster-detail-modal-backdrop"
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 lg:p-8 bg-black/85 backdrop-blur-md animate-fade-in"
-        onClick={onClose}
+    <div
+      id="direct-large-photo-viewer"
+      className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col justify-between select-none animate-fade-in overflow-hidden"
+      onClick={onClose}
+    >
+      {/* 🌟 TOP CONTROL HEADER */}
+      <header
+        className="w-full flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 z-30 bg-gradient-to-b from-black/90 via-black/60 to-transparent backdrop-blur-sm shrink-0 gap-2"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div
-          id="poster-detail-modal-card"
-          onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-5xl lg:max-w-6xl max-h-[92vh] bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl text-zinc-100 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden"
-        >
-          {/* Close Button Top Right */}
+        {/* Left: Poster Title, Year, Category & Sequence Counter */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="text-sm sm:text-lg font-black text-white truncate max-w-[160px] sm:max-w-md">
+                {poster.title}
+              </h2>
+              {poster.year && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700 shrink-0">
+                  {poster.year}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-[10px] sm:text-xs text-zinc-400 mt-0.5">
+              <span className="font-semibold text-zinc-300">
+                {poster.type === 'movie' ? '🎬 Movie' : `📺 ${poster.country || ''} Series`}
+              </span>
+              {typeof poster.rating === 'number' && poster.rating > 0 && (
+                <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                  <Star className="w-3 h-3 fill-amber-400" />
+                  {poster.rating.toFixed(1)}
+                </span>
+              )}
+              {hasMultiple && (
+                <span className="px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300 font-mono text-[10px] font-bold">
+                  {currentIndex + 1} / {totalCount}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Action Buttons (Zoom, Details Drawer, Drive link, Delete, Close) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Zoom Controls */}
+          <div className="hidden sm:flex items-center bg-zinc-900/90 border border-zinc-800 rounded-xl p-0.5">
+            <button
+              type="button"
+              onClick={() => setZoomLevel((z) => Math.max(0.6, +(z - 0.25).toFixed(2)))}
+              className="p-1.5 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              title="Zoom Out (-)"
+            >
+              <ZoomOut className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoomLevel(1)}
+              className="px-2 py-1 text-[11px] font-bold text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors font-mono"
+              title="Reset to 100%"
+            >
+              {Math.round(zoomLevel * 100)}%
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoomLevel((z) => Math.min(3, +(z + 0.25).toFixed(2)))}
+              className="p-1.5 text-zinc-300 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              title="Zoom In (+)"
+            >
+              <ZoomIn className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Toggle Info / Synopsis Drawer */}
           <button
-            id="btn-close-detail-modal"
+            type="button"
+            id="btn-viewer-toggle-info"
+            onClick={() => setShowInfoDrawer((prev) => !prev)}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+              showInfoDrawer
+                ? 'bg-rose-600 border-rose-500 text-white shadow-md'
+                : 'bg-zinc-900/90 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800'
+            }`}
+            title="အချက်အလက်နှင့် ဇာတ်လမ်းအကျဉ်း ကြည့်ရှုရန်"
+          >
+            <Info className="w-4 h-4" />
+            <span className="hidden md:inline">အသေးစိတ်</span>
+          </button>
+
+          {/* Toggle Thumbnail Filmstrip */}
+          {hasMultiple && (
+            <button
+              type="button"
+              onClick={() => setShowThumbnails((prev) => !prev)}
+              className={`p-1.5 sm:px-2 sm:py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                showThumbnails
+                  ? 'bg-zinc-800 border-zinc-700 text-white'
+                  : 'bg-zinc-900/90 border-zinc-800 text-zinc-400 hover:text-white'
+              }`}
+              title="အောက်ခြေ ပုံငယ်ပြခန်း ဖွင့်/ပိတ်ရန်"
+            >
+              <Layers className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Open Original in Google Drive */}
+          {(poster.driveWebViewLink || poster.driveFileId) && (
+            <a
+              href={
+                poster.driveWebViewLink ||
+                `https://drive.google.com/file/d/${poster.driveFileId}/view?usp=sharing`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-1.5 sm:p-2 rounded-xl bg-zinc-900/90 hover:bg-sky-950/60 border border-zinc-800 hover:border-sky-800 text-sky-400 transition-colors"
+              title="Google Drive တွင် မူရင်းဖိုင်ဖွင့်ရန်"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          )}
+
+          {/* Delete Button (Only for Admin) */}
+          {isAdmin && onDelete && (
+            <button
+              type="button"
+              id="btn-viewer-delete-poster"
+              onClick={() => {
+                onDelete(poster);
+                onClose();
+              }}
+              className="p-1.5 sm:p-2 rounded-xl bg-zinc-900/90 hover:bg-rose-900/60 border border-zinc-800 hover:border-rose-700 text-rose-400 hover:text-rose-200 transition-colors"
+              title="ဤ Poster ကို ဖျက်ရန်"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Close Viewer Button */}
+          <button
+            type="button"
+            id="btn-close-direct-viewer"
             onClick={onClose}
-            aria-label="Close modal"
-            className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-black/70 hover:bg-black/90 text-zinc-300 hover:text-white border border-zinc-700/60 shadow-lg transition-all active:scale-95"
+            className="p-1.5 sm:p-2 rounded-xl bg-zinc-900/90 hover:bg-rose-600 text-zinc-300 hover:text-white border border-zinc-800 hover:border-rose-500 transition-all shadow-md active:scale-95 ml-1"
+            title="ပိတ်မည် (ESC)"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+      </header>
 
-          {/* Poster Image Left/Top - Large & Crisp Display */}
-          <div className="w-full md:w-1/2 lg:w-7/12 bg-zinc-950 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 relative border-b md:border-b-0 md:border-r border-zinc-800/80">
-            {/* Control bar above image */}
-            <div className="w-full max-w-[360px] sm:max-w-[460px] lg:max-w-[540px] flex items-center justify-between mb-2.5 px-1 text-xs text-zinc-400">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Eye className="w-3.5 h-3.5 text-rose-400" />
-                <span className="text-zinc-300 font-semibold">Poster View</span>
-              </span>
+      {/* 🌟 CENTER STAGE: DIRECT LARGE PHOTO & FLOATING NEXT / PREV BUTTONS */}
+      <div
+        className="relative flex-1 w-full flex items-center justify-center p-2 sm:p-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* ⬅️ PREVIOUS BUTTON (နောက်) */}
+        {hasMultiple && (
+          <button
+            type="button"
+            id="btn-viewer-prev"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGoPrev();
+            }}
+            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/60 hover:bg-rose-600 border border-white/20 hover:border-rose-500 text-white flex items-center justify-center transition-all duration-200 active:scale-90 shadow-2xl backdrop-blur-md group"
+            title="နောက်တစ်ပုံ (Previous - Left Arrow key)"
+            aria-label="Previous poster"
+          >
+            <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8 group-hover:-translate-x-0.5 transition-transform" />
+          </button>
+        )}
 
-              <div className="flex items-center gap-2">
-                {/* Fit Mode Toggle */}
+        {/* ➡️ NEXT BUTTON (ရှေ့) */}
+        {hasMultiple && (
+          <button
+            type="button"
+            id="btn-viewer-next"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGoNext();
+            }}
+            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/60 hover:bg-rose-600 border border-white/20 hover:border-rose-500 text-white flex items-center justify-center transition-all duration-200 active:scale-90 shadow-2xl backdrop-blur-md group"
+            title="ရှေ့တစ်ပုံ (Next - Right Arrow key)"
+            aria-label="Next poster"
+          >
+            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 group-hover:translate-x-0.5 transition-transform" />
+          </button>
+        )}
+
+        {/* Loading Spinner */}
+        {isLoading && !hasFailedAll && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <div className="flex flex-col items-center gap-3 bg-zinc-950/80 px-6 py-4 rounded-2xl border border-zinc-800/80 shadow-2xl backdrop-blur-md">
+              <div className="w-10 h-10 border-3 border-rose-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs text-zinc-300 font-semibold">HD ဓာတ်ပုံ ဖွင့်နေပါသည်...</span>
+            </div>
+          </div>
+        )}
+
+        {/* Image Display */}
+        {!hasFailedAll ? (
+          <div
+            className="w-full h-full flex items-center justify-center overflow-auto cursor-zoom-in"
+            onClick={() => setZoomLevel((z) => (z > 1 ? 1 : 1.75))}
+          >
+            <img
+              key={poster.id}
+              src={imgSrc}
+              alt={poster.title}
+              referrerPolicy="no-referrer"
+              style={{
+                transform: `scale(${zoomLevel})`,
+                transition: 'transform 0.2s ease-out, opacity 0.25s ease-in',
+              }}
+              className={`max-h-[82vh] sm:max-h-[84vh] max-w-[94vw] w-auto h-auto object-contain rounded-xl sm:rounded-2xl shadow-2xl transition-opacity select-none ${
+                isLoading ? 'opacity-0 scale-95' : 'opacity-100'
+              }`}
+              onLoad={() => setIsLoading(false)}
+              onError={handleImageError}
+              draggable={false}
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-6 text-center max-w-sm bg-zinc-900/90 border border-zinc-800 rounded-2xl shadow-2xl">
+            <ImageOff className="w-12 h-12 text-rose-500 mb-3" />
+            <h4 className="text-sm font-bold text-white">ဓာတ်ပုံ ဖွင့်မရပါ (Load Failed)</h4>
+            <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
+              Google Drive တွင် ဤပုံအား <strong className="text-amber-300">"Anyone with the link"</strong> ဖြင့် မျှဝေထားရန် လိုအပ်ပါသည်။
+            </p>
+            <button
+              onClick={handleRetry}
+              className="mt-4 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 flex items-center gap-2 transition-colors shadow-md"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>ပြန်လည်စမ်းသပ်ရန် (Retry)</span>
+            </button>
+          </div>
+        )}
+
+        {/* 🌟 SLIDE-OVER / FLOATING DETAILS DRAWER (When user clicks "အသေးစိတ်") */}
+        {showInfoDrawer && (
+          <div
+            className="absolute top-4 right-4 bottom-4 w-80 sm:w-96 bg-zinc-950/95 border border-zinc-800 rounded-2xl shadow-2xl p-5 z-40 backdrop-blur-xl flex flex-col justify-between overflow-y-auto animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1.5">
+                  <Info className="w-4 h-4" />
+                  Poster Details
+                </span>
                 <button
                   type="button"
-                  onClick={() => setFitMode((m) => (m === 'contain' ? 'cover' : 'contain'))}
-                  className="px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] font-medium transition-colors"
-                  title="Toggle between showing whole photo or filling the frame"
+                  onClick={() => setShowInfoDrawer(false)}
+                  className="p-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white"
                 >
-                  {fitMode === 'contain' ? 'ပုံအပြည့် (Fit)' : 'ဘောင်ဖြည့် (Cover)'}
+                  <X className="w-4 h-4" />
                 </button>
-
-                {/* Enlarge / Fullscreen Button */}
-                {!hasFailedAll && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsFullscreen(true);
-                      setZoomLevel(1);
-                    }}
-                    className="flex items-center gap-1 px-3 py-1 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold shadow-md transition-all active:scale-95"
-                    title="Open Fullscreen Lightbox"
-                  >
-                    <Maximize2 className="w-3 h-3" />
-                    <span>အကြီးချဲ့မည်</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Poster Image Container */}
-            <div
-              onClick={() => {
-                if (!hasFailedAll && !isLoading) {
-                  setIsFullscreen(true);
-                  setZoomLevel(1);
-                }
-              }}
-              className="relative w-full max-w-[360px] sm:max-w-[460px] lg:max-w-[540px] aspect-[2/3] max-h-[55vh] sm:max-h-[65vh] md:max-h-[76vh] rounded-2xl overflow-hidden shadow-2xl border border-zinc-800/90 bg-zinc-900 flex items-center justify-center cursor-pointer group"
-            >
-              {!hasFailedAll ? (
-                <>
-                  {isLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-zinc-950/85 z-10">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-10 h-10 border-3 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                        <span className="text-xs text-zinc-400 font-medium">ဓာတ်ပုံ ဖွင့်နေပါသည်...</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <img
-                    src={imgSrc}
-                    alt={poster.title}
-                    referrerPolicy="no-referrer"
-                    className={`w-full h-full transition-all duration-300 ${
-                      fitMode === 'contain' ? 'object-contain' : 'object-cover'
-                    } ${isLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}
-                    onLoad={() => setIsLoading(false)}
-                    onError={handleImageError}
-                  />
-
-                  {/* Hover Overlay Hint for Enlarge */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                    <span className="flex items-center gap-2 px-4 py-2 rounded-xl bg-black/80 backdrop-blur-md text-white font-bold text-xs shadow-xl border border-white/20">
-                      <Maximize2 className="w-4 h-4 text-rose-400" />
-                      <span>မျက်နှာပြင်ပြည့် အကြီးချဲ့ကြည့်ရန် နှိပ်ပါ</span>
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-zinc-900 to-zinc-950 text-zinc-400">
-                  <ImageOff className="w-12 h-12 text-rose-500/80 mb-3" />
-                  <h4 className="text-sm font-bold text-zinc-200">ပုံမပေါ်နိုင်ပါ (Loading Failed)</h4>
-                  <p className="text-xs text-zinc-400 mt-2 max-w-xs leading-relaxed">
-                    Google Drive တွင် ဤပုံ သို့မဟုတ် Folder ကို <strong className="text-amber-300">"Anyone with the link (Viewer)"</strong> ဖြင့် မျှဝေထားရန် လိုအပ်ပါသည်။
-                  </p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRetry();
-                    }}
-                    className="mt-4 px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-zinc-200 flex items-center gap-2 transition-colors shadow-md"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>ပြန်လည်စမ်းသပ်ရန်</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Click to enlarge caption */}
-            {!hasFailedAll && (
-              <p className="text-[11px] text-zinc-500 mt-2.5 text-center flex items-center gap-1">
-                <span>💡 ပုံကို နှိပ်ပြီး မျက်နှာပြင်ပြည့် အကြီးချဲ့ကြည့်ရှုနိုင်ပါသည်</span>
-              </p>
-            )}
-          </div>
-
-          {/* Details Content Right/Bottom */}
-          <div className="w-full md:w-1/2 lg:w-5/12 p-6 sm:p-8 lg:p-10 flex flex-col justify-between overflow-y-auto max-h-[92vh]">
-            <div className="space-y-5">
-              {/* Category / Type badges */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
-                  {poster.type === 'movie' ? <Film className="w-3.5 h-3.5" /> : <Tv className="w-3.5 h-3.5" />}
-                  {poster.type === 'movie' ? 'Movie' : 'Series'}
-                </span>
-
-                {poster.year && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full bg-zinc-800 text-zinc-200 border border-zinc-700">
-                    <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                    {poster.year}
-                  </span>
-                )}
-
-                {poster.country && (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    <Globe className="w-3.5 h-3.5" />
-                    {poster.country}
-                  </span>
-                )}
               </div>
 
-              {/* Title */}
               <div>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
-                  {poster.title}
-                </h2>
+                <h3 className="text-lg font-black text-white leading-snug">{poster.title}</h3>
                 {poster.originalFileName && (
-                  <p className="text-xs text-zinc-500 mt-1 font-mono truncate" title={poster.originalFileName}>
+                  <p className="text-[11px] text-zinc-500 font-mono truncate mt-0.5" title={poster.originalFileName}>
                     File: {poster.originalFileName}
                   </p>
                 )}
               </div>
 
-              {/* Rating & Genre */}
-              <div className="flex items-center gap-5 pb-5 border-b border-zinc-800">
-                {typeof poster.rating === 'number' && poster.rating > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold">
-                    <Star className="w-4 h-4 fill-amber-400" />
-                    <span className="text-lg">{poster.rating.toFixed(1)}</span>
-                    <span className="text-xs text-amber-400/70 font-normal">/ 10</span>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                  <span className="text-zinc-500 block text-[10px]">Type / အမျိုးအစား</span>
+                  <span className="text-zinc-200 font-bold capitalize">
+                    {poster.type === 'movie' ? '🎬 Movie' : '📺 Series'}
+                  </span>
+                </div>
+                {poster.year && (
+                  <div className="p-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                    <span className="text-zinc-500 block text-[10px]">Year / ခုနှစ်</span>
+                    <span className="text-zinc-200 font-bold">{poster.year}</span>
                   </div>
                 )}
-                <div>
-                  <span className="text-xs text-zinc-400 block">Genre / အမျိုးအစား</span>
-                  <span className="text-sm text-zinc-200 font-semibold">{poster.genre}</span>
-                </div>
+                {poster.country && (
+                  <div className="p-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800 col-span-2">
+                    <span className="text-zinc-500 block text-[10px]">Country / နိုင်ငံ</span>
+                    <span className="text-emerald-400 font-bold">{poster.country} Series</span>
+                  </div>
+                )}
+                {poster.genre && (
+                  <div className="p-2.5 rounded-xl bg-zinc-900/80 border border-zinc-800 col-span-2">
+                    <span className="text-zinc-500 block text-[10px]">Genre</span>
+                    <span className="text-zinc-300 font-medium">{poster.genre}</span>
+                  </div>
+                )}
               </div>
 
-              {/* Overview description */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
-                  Overview / Synopsis
-                </h4>
-                <p className="text-sm text-zinc-300 leading-relaxed bg-zinc-950/50 p-4 rounded-xl border border-zinc-800/80">
+                <span className="text-zinc-400 font-semibold text-xs block mb-1">
+                  Synopsis / ဇာတ်လမ်းအကျဉ်း
+                </span>
+                <p className="text-xs text-zinc-300 leading-relaxed bg-zinc-900/60 p-3 rounded-xl border border-zinc-800 max-h-48 overflow-y-auto">
                   {cleanDescription()}
                 </p>
               </div>
-
-              {/* Google Drive Link if present */}
-              {(poster.driveWebViewLink || poster.driveFileId) && (
-                <div className="pt-1">
-                  <a
-                    href={
-                      poster.driveWebViewLink ||
-                      `https://drive.google.com/file/d/${poster.driveFileId}/view?usp=sharing`
-                    }
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-xs text-sky-400 hover:text-sky-300 font-medium underline underline-offset-4 transition-colors"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Google Drive တွင် မူရင်းဖိုင်ဖွင့်ရန် (Open in Drive)</span>
-                  </a>
-                </div>
-              )}
             </div>
 
-            {/* Action Footer */}
-            <div className="flex items-center justify-between gap-3 mt-8 pt-5 border-t border-zinc-800">
-              {onDelete ? (
-                <button
-                  id="btn-delete-poster-detail"
-                  type="button"
-                  onClick={() => {
-                    onDelete(poster);
-                    onClose();
-                  }}
-                  className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white hover:bg-rose-600 border border-rose-900/50 transition-all active:scale-95"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>ဖျက်မည် (Delete)</span>
-                </button>
-              ) : (
-                <span className="text-xs text-zinc-500 font-medium">Movie Perfect Catalog</span>
-              )}
-
-              <div className="flex items-center gap-2 ml-auto">
-                {!hasFailedAll && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsFullscreen(true);
-                      setZoomLevel(1);
-                    }}
-                    className="px-4 py-2.5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-all flex items-center gap-1.5 shadow-lg active:scale-95"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    <span>အကြီးချဲ့ကြည့်ရှုမည်</span>
-                  </button>
-                )}
-
-                <button
-                  id="btn-close-modal-bottom"
-                  type="button"
-                  onClick={onClose}
-                  className="px-5 py-2.5 rounded-xl text-xs font-semibold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors"
-                >
-                  ပိတ်မည် (Close)
-                </button>
-              </div>
+            <div className="pt-4 border-t border-zinc-800 flex items-center justify-between text-xs">
+              <span className="text-zinc-500 font-mono">
+                {currentIndex + 1} of {totalCount}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowInfoDrawer(false)}
+                className="px-4 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold transition-colors"
+              >
+                Done
+              </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* 🌟 Dedicated Fullscreen Lightbox / Zoom Viewer for Maximum Size */}
-      {isFullscreen && (
-        <div
-          id="poster-fullscreen-lightbox"
-          className="fixed inset-0 z-[70] bg-black/95 backdrop-blur-xl flex flex-col justify-between animate-fade-in"
-          onClick={() => {
-            setIsFullscreen(false);
-            setZoomLevel(1);
-          }}
+      {/* 🌟 BOTTOM THUMBNAIL FILMSTRIP & QUICK NAVIGATION */}
+      {hasMultiple && showThumbnails && (
+        <footer
+          className="w-full px-3 sm:px-6 py-2 bg-gradient-to-t from-black/95 via-black/80 to-transparent backdrop-blur-sm z-30 shrink-0"
+          onClick={(e) => e.stopPropagation()}
         >
-          {/* Top Floating Controls */}
-          <div
-            className="w-full flex items-center justify-between p-4 sm:p-6 z-20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-white tracking-wide truncate max-w-[200px] sm:max-w-md">
-                {poster.title} ({poster.year})
-              </span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 font-mono">
-                {Math.round(zoomLevel * 100)}%
-              </span>
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+            {/* Quick Previous Button */}
+            <button
+              type="button"
+              onClick={handleGoPrev}
+              className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 transition-colors shrink-0 flex items-center gap-1 text-xs font-semibold"
+              title="နောက်တစ်ပုံ"
+            >
+              <ChevronLeft className="w-4 h-4 text-rose-400" />
+              <span className="hidden sm:inline">နောက်</span>
+            </button>
+
+            {/* Horizontal Thumbnails Carousel */}
+            <div
+              ref={thumbStripRef}
+              className="flex-1 flex items-center gap-2 overflow-x-auto py-1 px-1 scrollbar-none justify-start sm:justify-center"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {posters.map((p, idx) => {
+                const isActive = p.id === poster.id;
+                const thumbSrc =
+                  p.thumbnailUrl ||
+                  (p.driveFileId
+                    ? `https://drive.google.com/thumbnail?id=${p.driveFileId}&sz=w160`
+                    : p.imageUrl);
+
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => onNavigatePoster && onNavigatePoster(p)}
+                    className={`relative shrink-0 w-9 h-13 sm:w-11 sm:h-16 rounded-lg overflow-hidden transition-all duration-200 ${
+                      isActive
+                        ? 'ring-2 ring-rose-500 scale-110 shadow-lg z-10'
+                        : 'opacity-50 hover:opacity-100 hover:scale-105'
+                    }`}
+                    title={`${p.title} (${idx + 1}/${totalCount})`}
+                  >
+                    <img
+                      src={thumbSrc}
+                      alt={p.title}
+                      referrerPolicy="no-referrer"
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="flex items-center gap-2 bg-zinc-900/90 border border-zinc-800 p-1.5 rounded-2xl backdrop-blur-md shadow-2xl">
-              <button
-                type="button"
-                onClick={() => setZoomLevel((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}
-                className="p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
-                title="Zoom Out"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setZoomLevel(1)}
-                className="px-2.5 py-1 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
-                title="Reset Zoom"
-              >
-                100%
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setZoomLevel((z) => Math.min(3, +(z + 0.25).toFixed(2)))}
-                className="p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors"
-                title="Zoom In"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-
-              {(poster.driveWebViewLink || poster.driveFileId) && (
-                <a
-                  href={
-                    poster.driveWebViewLink ||
-                    `https://drive.google.com/file/d/${poster.driveFileId}/view?usp=sharing`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-xl text-sky-400 hover:text-sky-300 hover:bg-zinc-800 transition-colors"
-                  title="Open in Drive"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsFullscreen(false);
-                  setZoomLevel(1);
-                }}
-                className="p-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white transition-colors ml-1 shadow-md"
-                title="Close Fullscreen"
-              >
-                <Minimize2 className="w-4 h-4" />
-              </button>
-            </div>
+            {/* Quick Next Button */}
+            <button
+              type="button"
+              onClick={handleGoNext}
+              className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-zinc-800 transition-colors shrink-0 flex items-center gap-1 text-xs font-semibold"
+              title="ရှေ့တစ်ပုံ"
+            >
+              <span className="hidden sm:inline">ရှေ့</span>
+              <ChevronRight className="w-4 h-4 text-rose-400" />
+            </button>
           </div>
-
-          {/* Center: Full viewport image */}
-          <div
-            className="flex-1 flex items-center justify-center p-2 sm:p-6 overflow-auto cursor-grab active:cursor-grabbing"
-            onClick={(e) => {
-              // Click to toggle zoom between 1x and 1.75x
-              e.stopPropagation();
-              setZoomLevel((z) => (z > 1 ? 1 : 1.75));
-            }}
-          >
-            <img
-              src={imgSrc}
-              alt={poster.title}
-              referrerPolicy="no-referrer"
-              style={{ transform: `scale(${zoomLevel})` }}
-              className="max-h-[82vh] max-w-[92vw] w-auto h-auto object-contain rounded-xl shadow-2xl transition-transform duration-200 select-none"
-            />
-          </div>
-
-          {/* Bottom Hint */}
-          <div className="p-3 text-center text-xs text-zinc-400 z-20 pointer-events-none">
-            <span>နှိပ်၍ Zoom အကြီး/အသေး ပြုလုပ်နိုင်ပါသည် (သို့မဟုတ် ESC နှိပ်၍ ပိတ်ပါ)</span>
-          </div>
-        </div>
+        </footer>
       )}
-    </>
+    </div>
   );
 };
-

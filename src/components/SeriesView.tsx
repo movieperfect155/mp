@@ -6,7 +6,7 @@ import { SortMode, sortPosters } from '../utils/sortUtils';
 
 interface SeriesViewProps {
   posters: Poster[];
-  onSelectPoster: (poster: Poster) => void;
+  onSelectPoster: (poster: Poster, contextList?: Poster[]) => void;
   onOpenUpload: (defaults?: { type?: 'series'; country?: SeriesCountry; year?: number }) => void;
   onDeletePoster: (poster: Poster) => void;
   isAdmin?: boolean;
@@ -365,7 +365,7 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
               key={poster.id}
               poster={poster}
               size={viewSize}
-              onSelect={onSelectPoster}
+              onSelect={(p) => onSelectPoster(p, sortedSeries)}
               onDelete={isAdmin ? onDeletePoster : undefined}
             />
           ))}

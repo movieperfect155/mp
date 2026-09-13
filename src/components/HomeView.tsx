@@ -7,7 +7,7 @@ import { comparePostersNumerically } from '../utils/sortUtils';
 
 interface HomeViewProps {
   posters: Poster[];
-  onSelectPoster: (poster: Poster) => void;
+  onSelectPoster: (poster: Poster, contextList?: Poster[]) => void;
   onNavigateTab: (tab: ActiveTab) => void;
   onOpenUpload: () => void;
   onDeletePoster?: (poster: Poster) => void;
@@ -114,7 +114,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="flex flex-wrap items-center gap-3">
               <button
                 id="btn-hero-view-details"
-                onClick={() => onSelectPoster(featured)}
+                onClick={() => onSelectPoster(featured, posters)}
                 className="px-6 py-2.5 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-xs sm:text-sm shadow-xl transition-all"
               >
                 View Poster Details
@@ -231,7 +231,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 key={poster.id}
                 poster={poster}
                 size={viewSize}
-                onSelect={onSelectPoster}
+                onSelect={(p) => onSelectPoster(p, movies)}
                 onDelete={isAdmin ? onDeletePoster : undefined}
               />
             ))}
@@ -283,7 +283,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 key={poster.id}
                 poster={poster}
                 size={viewSize}
-                onSelect={onSelectPoster}
+                onSelect={(p) => onSelectPoster(p, series)}
                 onDelete={isAdmin ? onDeletePoster : undefined}
               />
             ))}

@@ -199,30 +199,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </>
             )}
 
-            {/* When not in Admin Mode, show discreet Sync & Admin Unlock buttons */}
-            {!showAdminControls && (
-              <div className="flex items-center gap-1.5">
-                <button
-                  id="btn-nav-visitor-sync"
-                  onClick={onOpenSyncModal}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-sky-950/70 text-sky-400 hover:text-sky-300 border border-zinc-800 hover:border-sky-800/50 transition-colors"
-                  title="ဖုန်းမှ ပုံများကို ဤတက်ပလက်သို့ သွင်းယူရန် (Cross-Device Sync)"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Sync</span>
-                </button>
-                <button
-                  id="btn-nav-visitor-admin"
-                  onClick={onOpenAdminLogin}
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-amber-400 border border-zinc-800 transition-colors"
-                  title="Admin / Owner Login (PIN: 155155)"
-                >
-                  <Lock className="w-3.5 h-3.5 text-amber-400/80" />
-                  <span className="hidden sm:inline">Admin</span>
-                </button>
-              </div>
-            )}
-
             {/* In-App Direct Install Button for Android/Chrome/Edge/iOS */}
             <PWAInstallButton />
 

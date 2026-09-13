@@ -63,8 +63,24 @@ export default function App() {
   const [isVisitorPreview, setIsVisitorPreview] = useState<boolean>(false);
   const [isAdminLoginOpen, setIsAdminLoginOpen] = useState<boolean>(false);
 
-  // Modals state
+  // Modals & Direct Large Photo Viewer state
   const [selectedPoster, setSelectedPoster] = useState<Poster | null>(null);
+  const [viewerPosters, setViewerPosters] = useState<Poster[]>([]);
+
+  const handleSelectPoster = (poster: Poster, contextList?: Poster[]) => {
+    setSelectedPoster(poster);
+    if (contextList && contextList.length > 0) {
+      setViewerPosters(contextList);
+    } else {
+      const sameType = posters.filter((p) => p.type === poster.type);
+      setViewerPosters(sameType.length > 0 ? sameType : posters);
+    }
+  };
+
+  const handleNavigatePoster = (nextPoster: Poster) => {
+    setSelectedPoster(nextPoster);
+  };
+
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [uploadDefaults, setUploadDefaults] = useState<{
     type: MediaType;
@@ -426,7 +442,7 @@ export default function App() {
         {activeTab === 'home' && (
           <HomeView
             posters={posters}
-            onSelectPoster={(p) => setSelectedPoster(p)}
+            onSelectPoster={handleSelectPoster}
             onNavigateTab={setActiveTab}
             onOpenUpload={() => setIsUploadOpen(true)}
             onDeletePoster={showAdminControls ? handleRequestDelete : undefined}
@@ -439,7 +455,7 @@ export default function App() {
         {activeTab === 'movie' && (
           <MovieView
             posters={posters}
-            onSelectPoster={(p) => setSelectedPoster(p)}
+            onSelectPoster={handleSelectPoster}
             onOpenUpload={() => setIsUploadOpen(true)}
             onDeletePoster={showAdminControls ? handleRequestDelete : undefined}
             isAdmin={showAdminControls}
@@ -449,7 +465,7 @@ export default function App() {
         {activeTab === 'series' && (
           <SeriesView
             posters={posters}
-            onSelectPoster={(p) => setSelectedPoster(p)}
+            onSelectPoster={handleSelectPoster}
             onOpenUpload={handleOpenUploadWithDefaults}
             onDeletePoster={showAdminControls ? handleRequestDelete : undefined}
             isAdmin={showAdminControls}
@@ -480,15 +496,6 @@ export default function App() {
               <span className="font-bold text-zinc-200">Movie Perfect</span>
               <span className="text-zinc-600">•</span>
               <span>Cinema & Series Poster Vault</span>
-              {/* Subtle Owner Login shortcut in footer */}
-              <button
-                id="btn-footer-admin-lock"
-                onClick={() => setIsAdminLoginOpen(true)}
-                className="opacity-20 hover:opacity-100 text-zinc-500 hover:text-amber-400 p-0.5 rounded transition-all ml-1"
-                title="Admin Login"
-              >
-                <Lock className="w-3 h-3" />
-              </button>
             </div>
           </div>
 
@@ -572,8 +579,11 @@ export default function App() {
       {/* Modals */}
       <PosterDetailModal
         poster={selectedPoster}
+        posters={viewerPosters.length > 0 ? viewerPosters : posters}
         onClose={() => setSelectedPoster(null)}
+        onNavigatePoster={handleNavigatePoster}
         onDelete={showAdminControls ? handleRequestDelete : undefined}
+        isAdmin={showAdminControls}
       />
 
       <UploadModal
