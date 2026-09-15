@@ -28,6 +28,12 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
   const [sortMode, setSortMode] = useState<SortMode>('z-to-a');
   const [search, setSearch] = useState('');
   const [viewSize, setViewSize] = useState<'large' | 'compact'>('large');
+  const [visibleCount, setVisibleCount] = useState(24);
+
+  // Reset visibleCount whenever filters change to keep DOM lightweight and 60fps fast
+  React.useEffect(() => {
+    setVisibleCount(24);
+  }, [selectedCountry, selectedYear, selectedFolder, search, sortMode]);
 
   // Filter only series with useMemo
   const series = useMemo(() => posters.filter((p) => p && p.type === 'series'), [posters]);
@@ -376,23 +382,41 @@ export const SeriesView: React.FC<SeriesViewProps> = ({
           )}
         </div>
       ) : (
-        <div
-          className={
-            viewSize === 'large'
-              ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6'
-              : 'grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4'
-          }
-        >
-          {sortedSeries.map((poster) => (
-            <PosterCard
-              key={poster.id}
-              poster={poster}
-              size={viewSize}
-              onSelect={(p) => onSelectPoster(p, sortedSeries)}
-              onDelete={isAdmin ? onDeletePoster : undefined}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            className={
+              viewSize === 'large'
+                ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6'
+                : 'grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4'
+            }
+          >
+            {sortedSeries.slice(0, visibleCount).map((poster) => (
+              <PosterCard
+                key={poster.id}
+                poster={poster}
+                size={viewSize}
+                onSelect={(p) => onSelectPoster(p, sortedSeries)}
+                onDelete={isAdmin ? onDeletePoster : undefined}
+              />
+            ))}
+          </div>
+
+          {sortedSeries.length > visibleCount && (
+            <div className="pt-6 flex flex-col items-center justify-center gap-2">
+              <button
+                type="button"
+                id="btn-load-more-series"
+                onClick={() => setVisibleCount((prev) => prev + 24)}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-emerald-950/40 transition-all active:scale-95 flex items-center gap-2"
+              >
+                <span>နောက်ထပ် ၂၄ ကား ကြည့်ရန် (ကျန်ရှိ: {sortedSeries.length - visibleCount} ကား)</span>
+              </button>
+              <p className="text-[11px] text-zinc-500 font-medium">
+                ပြသထားသည်- {Math.min(visibleCount, sortedSeries.length)} / စုစုပေါင်း {sortedSeries.length} ကား
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

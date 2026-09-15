@@ -26,6 +26,12 @@ export const MovieView: React.FC<MovieViewProps> = ({
   const [sortMode, setSortMode] = useState<SortMode>('z-to-a');
   const [search, setSearch] = useState('');
   const [viewSize, setViewSize] = useState<'large' | 'compact'>('large');
+  const [visibleCount, setVisibleCount] = useState(24);
+
+  // Reset visibleCount whenever filters change to keep DOM lightweight and instantaneous
+  React.useEffect(() => {
+    setVisibleCount(24);
+  }, [selectedYear, selectedFolder, search, sortMode]);
 
   // Filter only movies with useMemo
   const movies = useMemo(() => posters.filter((p) => p && p.type === 'movie'), [posters]);
@@ -274,23 +280,41 @@ export const MovieView: React.FC<MovieViewProps> = ({
           )}
         </div>
       ) : (
-        <div
-          className={
-            viewSize === 'large'
-              ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6'
-              : 'grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4'
-          }
-        >
-          {sortedMovies.map((poster) => (
-            <PosterCard
-              key={poster.id}
-              poster={poster}
-              size={viewSize}
-              onSelect={(p) => onSelectPoster(p, sortedMovies)}
-              onDelete={isAdmin ? onDeletePoster : undefined}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            className={
+              viewSize === 'large'
+                ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6'
+                : 'grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4'
+            }
+          >
+            {sortedMovies.slice(0, visibleCount).map((poster) => (
+              <PosterCard
+                key={poster.id}
+                poster={poster}
+                size={viewSize}
+                onSelect={(p) => onSelectPoster(p, sortedMovies)}
+                onDelete={isAdmin ? onDeletePoster : undefined}
+              />
+            ))}
+          </div>
+
+          {sortedMovies.length > visibleCount && (
+            <div className="pt-6 flex flex-col items-center justify-center gap-2">
+              <button
+                type="button"
+                id="btn-load-more-movies"
+                onClick={() => setVisibleCount((prev) => prev + 24)}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-950/40 transition-all active:scale-95 flex items-center gap-2"
+              >
+                <span>နောက်ထပ် ၂၄ ကား ကြည့်ရန် (ကျန်ရှိ: {sortedMovies.length - visibleCount} ကား)</span>
+              </button>
+              <p className="text-[11px] text-zinc-500 font-medium">
+                ပြသထားသည်- {Math.min(visibleCount, sortedMovies.length)} / စုစုပေါင်း {sortedMovies.length} ကား
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

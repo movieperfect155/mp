@@ -18,31 +18,32 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
   const isLarge = size === 'large';
   const getInitialImage = () => {
     if (poster.driveFileId) {
-      // w600 / w400 loads 4x faster on mobile networks and uses 75% less RAM than w1200
-      return `https://drive.google.com/thumbnail?id=${poster.driveFileId}&sz=${isLarge ? 'w600' : 'w400'}`;
+      // High-speed Google UserContent CDN Edge endpoint: delivers pre-compressed w400 webp/jpeg with 0 cookie hops
+      return `https://lh3.googleusercontent.com/d/${poster.driveFileId}=w400`;
     }
     return poster.imageUrl;
   };
 
   const [imgSrc, setImgSrc] = useState(getInitialImage);
   const [retryCount, setRetryCount] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [hasFailedAll, setHasFailedAll] = useState(false);
 
   const handleImageError = () => {
     if (poster.driveFileId) {
-      if (retryCount === 0 && poster.thumbnailUrl && poster.thumbnailUrl !== imgSrc) {
+      if (retryCount === 0) {
         setRetryCount(1);
-        setImgSrc(poster.thumbnailUrl);
+        setImgSrc(`https://drive.google.com/thumbnail?id=${poster.driveFileId}&sz=${isLarge ? 'w600' : 'w400'}`);
         return;
       }
-      if (retryCount <= 1) {
+      if (retryCount === 1 && poster.thumbnailUrl && poster.thumbnailUrl !== imgSrc) {
         setRetryCount(2);
-        setImgSrc(`https://lh3.googleusercontent.com/d/${poster.driveFileId}`);
+        setImgSrc(poster.thumbnailUrl);
         return;
       }
       if (retryCount <= 2) {
         setRetryCount(3);
-        setImgSrc(`https://drive.google.com/thumbnail?id=${poster.driveFileId}&sz=w600`);
+        setImgSrc(`https://lh3.googleusercontent.com/d/${poster.driveFileId}`);
         return;
       }
     }
@@ -59,6 +60,13 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
     >
       {/* Poster Image Container */}
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-950 flex items-center justify-center">
+        {/* Placeholder skeleton while loading */}
+        {!isLoaded && !hasFailedAll && (
+          <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full border-2 border-zinc-700/50 border-t-zinc-400 animate-spin opacity-40" />
+          </div>
+        )}
+
         {!hasFailedAll ? (
           <>
             <img
@@ -67,7 +75,10 @@ const PosterCardComponent: React.FC<PosterCardProps> = ({
               referrerPolicy="no-referrer"
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+              onLoad={() => setIsLoaded(true)}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ease-out ${
+                isLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
               onError={handleImageError}
             />
 

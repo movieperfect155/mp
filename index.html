@@ -17,6 +17,12 @@
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
+    <!-- High-speed network preconnect to eliminate image and database handshake lag -->
+    <link rel="preconnect" href="https://lh3.googleusercontent.com" crossorigin />
+    <link rel="preconnect" href="https://drive.google.com" crossorigin />
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin />
+    <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+    <link rel="dns-prefetch" href="https://drive.google.com" />
     <script>
       try {
         if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
